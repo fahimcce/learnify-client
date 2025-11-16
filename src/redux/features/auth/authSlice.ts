@@ -2,6 +2,15 @@ import { createSlice } from "@reduxjs/toolkit";
 import Cookies from "js-cookie";
 import { jwtDecode } from "jwt-decode";
 
+interface DecodedToken {
+  email: string;
+  role: string;
+  userId?: string;
+  name?: string;
+  exp?: number;
+  iat?: number;
+}
+
 // Initialize state from cookies if available
 const getUserFromCookies = () => {
   try {
@@ -53,6 +62,72 @@ const authSlice = createSlice({
         Cookies.set("user", JSON.stringify(action.payload), { expires: 7 }); // 7 days
       } else {
         Cookies.remove("user");
+      }
+    },
+    // Sync auth state with cookies on rehydration
+    rehydrateAuth(state) {
+      const cookieToken = Cookies.get("token");
+      const cookieUser = Cookies.get("user");
+
+      if (cookieToken) {
+        try {
+          const decodedToken = jwtDecode<DecodedToken>(cookieToken);
+          const currentTime = Date.now() / 1000;
+
+          if (decodedToken.exp && decodedToken.exp < currentTime) {
+            // Token expired
+            state.user = null;
+            state.token = null;
+            Cookies.remove("user");
+            Cookies.remove("token");
+          } else {
+            state.token = cookieToken;
+            // If cookieUser exists, use it; otherwise, create from token
+            if (cookieUser) {
+              try {
+                state.user = JSON.parse(cookieUser);
+                // Ensure _id is in user object if token has userId
+                if (decodedToken.userId && !state.user?._id) {
+                  state.user = {
+                    ...state.user,
+                    _id: decodedToken.userId,
+                  };
+                  Cookies.set("user", JSON.stringify(state.user), {
+                    expires: 7,
+                  });
+                }
+              } catch (error) {
+                // Invalid cookie, create from token
+                state.user = {
+                  _id: decodedToken.userId,
+                  email: decodedToken.email,
+                  role: decodedToken.role,
+                  name: decodedToken.name,
+                };
+                Cookies.set("user", JSON.stringify(state.user), { expires: 7 });
+              }
+            } else {
+              // No user cookie, create from token
+              state.user = {
+                _id: decodedToken.userId,
+                email: decodedToken.email,
+                role: decodedToken.role,
+                name: decodedToken.name,
+              };
+              Cookies.set("user", JSON.stringify(state.user), { expires: 7 });
+            }
+          }
+        } catch (error) {
+          // Invalid token
+          state.user = null;
+          state.token = null;
+          Cookies.remove("user");
+          Cookies.remove("token");
+        }
+      } else {
+        // No token cookie
+        state.user = null;
+        state.token = null;
       }
     },
     logout(state) {
@@ -145,5 +220,6 @@ export const {
   setState,
   syncWithCookies,
   setLogoutLoading,
+  rehydrateAuth,
 } = authSlice.actions;
 export default authSlice.reducer;

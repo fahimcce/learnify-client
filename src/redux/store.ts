@@ -38,5 +38,7 @@ const store = configureStore({
       },
     }).concat(api.middleware),
 });
+
 const persistor = persistStore(store);
+export type RootState = ReturnType<typeof store.getState>;
 export { persistor, store };

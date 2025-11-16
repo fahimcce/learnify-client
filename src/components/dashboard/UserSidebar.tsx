@@ -14,6 +14,7 @@ import {
   X,
   GraduationCap,
   Sparkles,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useDispatch } from "react-redux";
@@ -43,6 +44,16 @@ const userMenuItems = [
     title: "Learning Path",
     href: "/user/learning-path",
     icon: Sparkles,
+  },
+  {
+    title: "Notes",
+    href: "/user/notes",
+    icon: FileText,
+  },
+  {
+    title: "Chat",
+    href: "/user/chat",
+    icon: MessageSquare,
   },
   {
     title: "Profile",

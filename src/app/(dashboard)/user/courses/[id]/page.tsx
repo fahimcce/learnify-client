@@ -45,6 +45,7 @@ import {
   PlayCircle,
   Image as ImageIcon,
   Link as LinkIcon,
+  StickyNote,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
@@ -309,6 +310,24 @@ export default function CourseDetailPage() {
               <Button variant="outline" size="lg" className="w-full">
                 <Sparkles className="mr-2 h-5 w-5" />
                 Learning Path
+              </Button>
+            </Link>
+            <Link
+              href={`/user/notes/course/${courseId}`}
+              className="flex-1 min-w-[200px]"
+            >
+              <Button variant="outline" size="lg" className="w-full">
+                <FileText className="mr-2 h-5 w-5" />
+                Course Notes
+              </Button>
+            </Link>
+            <Link
+              href={`/user/notes/create?courseId=${courseId}`}
+              className="flex-1 min-w-[200px]"
+            >
+              <Button variant="outline" size="lg" className="w-full">
+                <StickyNote className="mr-2 h-5 w-5" />
+                Create Note
               </Button>
             </Link>
           </>

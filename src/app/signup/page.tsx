@@ -41,6 +41,7 @@ import { toast } from "sonner";
 interface DecodedToken {
   email: string;
   role: string;
+  userId?: string; // User ID from token
   exp: number;
   iat: number;
   name?: string;
@@ -88,10 +89,11 @@ export default function SignupPage() {
             // Get user name from signup response or form data
             const userName = signUpResponse?.data?.name || formData.name;
 
-            // Set token and user in Redux
+            // Set token and user in Redux (include _id if available in token)
             dispatch(setToken(accessToken));
             dispatch(
               setUser({
+                _id: decodedToken.userId, // Extract user ID from token
                 email: decodedToken.email,
                 role: decodedToken.role,
                 name: userName,

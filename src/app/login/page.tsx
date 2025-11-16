@@ -35,6 +35,7 @@ import { toast } from "sonner";
 interface DecodedToken {
   email: string;
   role: string;
+  userId?: string; // User ID from token
   exp: number;
   iat: number;
   name?: string;
@@ -65,10 +66,11 @@ export default function LoginPage() {
         // Decode token to get user info
         const decodedToken: DecodedToken = jwtDecode(accessToken);
 
-        // Set token and user in Redux
+        // Set token and user in Redux (include _id if available in token)
         dispatch(setToken(accessToken));
         dispatch(
           setUser({
+            _id: decodedToken.userId, // Extract user ID from token
             email: decodedToken.email,
             role: decodedToken.role,
             name: decodedToken.name,
