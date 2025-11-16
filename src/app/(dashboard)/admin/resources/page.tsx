@@ -42,7 +42,8 @@ import {
   Upload,
 } from "lucide-react";
 import { toast } from "sonner";
-import Link from "next/link";
+import { ResourceForm } from "@/components/resource/ResourceForm";
+import { useUploadResourceFileMutation } from "@/redux/features/courseResource/courseResource.api";
 
 export default function AdminResourcesPage() {
   const [courseFilter, setCourseFilter] = useState<string>("all");
@@ -51,6 +52,7 @@ export default function AdminResourcesPage() {
   const [hardDeleteResourceId, setHardDeleteResourceId] = useState<
     string | null
   >(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   const { data: courses } = useGetAllCoursesQuery();
   const { data: resources, isLoading } = useGetAllResourcesQuery({
@@ -61,6 +63,8 @@ export default function AdminResourcesPage() {
     useDeleteResourceMutation();
   const [hardDeleteResource, { isLoading: isHardDeleting }] =
     useHardDeleteResourceMutation();
+  const [uploadResource, { isLoading: isUploading }] =
+    useUploadResourceFileMutation();
 
   const resourcesArray = Array.isArray(resources) ? resources : [];
   const coursesArray = Array.isArray(courses) ? courses : [];
@@ -133,6 +137,35 @@ export default function AdminResourcesPage() {
     }
   };
 
+  const handleCreateResource = async (data: {
+    courseId: string;
+    title: string;
+    description?: string;
+    file: File;
+  }) => {
+    try {
+      const formData = new FormData();
+      formData.append("file", data.file);
+      formData.append("title", data.title);
+      if (data.description) {
+        formData.append("description", data.description);
+      }
+
+      await uploadResource({
+        courseId: data.courseId,
+        formData,
+      }).unwrap();
+      toast.success("Resource uploaded successfully!");
+    } catch (error: any) {
+      const errorMessage =
+        error?.data?.message ||
+        error?.message ||
+        "Failed to upload resource. Please try again.";
+      toast.error(errorMessage);
+      throw error;
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -151,12 +184,13 @@ export default function AdminResourcesPage() {
             Manage all course resources in the system
           </p>
         </div>
-        <Link href="/admin/resources/upload">
-          <Button className="w-full sm:w-auto">
-            <Upload className="mr-2 h-4 w-4" />
-            Upload Resource
-          </Button>
-        </Link>
+        <Button
+          className="w-full sm:w-auto"
+          onClick={() => setIsCreateDialogOpen(true)}
+        >
+          <Upload className="mr-2 h-4 w-4" />
+          Upload Resource
+        </Button>
       </div>
 
       {/* Filters */}
@@ -325,12 +359,10 @@ export default function AdminResourcesPage() {
                   ? "Try adjusting your filters"
                   : "Get started by uploading your first resource"}
               </p>
-              <Link href="/admin/resources/upload">
-                <Button>
-                  <Upload className="mr-2 h-4 w-4" />
-                  Upload Resource
-                </Button>
-              </Link>
+              <Button onClick={() => setIsCreateDialogOpen(true)}>
+                <Upload className="mr-2 h-4 w-4" />
+                Upload Resource
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -403,6 +435,17 @@ export default function AdminResourcesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Create Resource Dialog */}
+      {coursesArray.length > 0 && (
+        <ResourceForm
+          open={isCreateDialogOpen}
+          onOpenChange={setIsCreateDialogOpen}
+          onSubmit={handleCreateResource}
+          courses={coursesArray}
+          isLoading={isUploading}
+        />
+      )}
     </div>
   );
 }

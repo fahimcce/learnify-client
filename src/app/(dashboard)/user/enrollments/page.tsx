@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import {
   Loader2,
   BookOpen,
@@ -31,6 +30,10 @@ import {
 export default function MyEnrollmentsPage() {
   const { data: enrollments, isLoading, error } = useGetMyEnrollmentsQuery();
   const enrollmentsArray = Array.isArray(enrollments) ? enrollments : [];
+  // Filter out enrollments with null courseId
+  const validEnrollments = enrollmentsArray.filter(
+    (enrollment) => enrollment.courseId && enrollment.courseId._id
+  );
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -103,14 +106,14 @@ export default function MyEnrollmentsPage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">My Enrollments</h1>
         <p className="text-muted-foreground mt-2">
-          Track your progress across all enrolled courses
+          View all your enrolled courses
         </p>
       </div>
 
       {/* Enrollments Grid */}
-      {enrollmentsArray.length > 0 ? (
+      {validEnrollments.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {enrollmentsArray.map((enrollment: Enrollment) => (
+          {validEnrollments.map((enrollment: Enrollment) => (
             <motion.div
               key={enrollment._id}
               initial={{ opacity: 0, y: 20 }}
@@ -122,10 +125,10 @@ export default function MyEnrollmentsPage() {
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1">
                       <CardTitle className="text-xl">
-                        {enrollment.courseId.courseName}
+                        {enrollment.courseId?.courseName || "Unknown Course"}
                       </CardTitle>
                       <CardDescription className="font-mono text-sm mt-1">
-                        {enrollment.courseId.courseCode}
+                        {enrollment.courseId?.courseCode || "N/A"}
                       </CardDescription>
                     </div>
                     <Badge className={getStatusColor(enrollment.status)}>
@@ -139,29 +142,20 @@ export default function MyEnrollmentsPage() {
                 </CardHeader>
                 <CardContent className="flex-1 flex flex-col">
                   <div className="space-y-4 flex-1">
-                    {/* Progress */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Progress</span>
-                        <span className="font-semibold">
-                          {enrollment.progress}%
-                        </span>
-                      </div>
-                      <Progress value={enrollment.progress} className="h-2" />
-                    </div>
-
                     {/* Course Level */}
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">
-                        Course Level:
-                      </span>
-                      <Badge
-                        className={getLevelColor(enrollment.courseId.level)}
-                      >
-                        {enrollment.courseId.level.charAt(0).toUpperCase() +
-                          enrollment.courseId.level.slice(1)}
-                      </Badge>
-                    </div>
+                    {enrollment.courseId?.level && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">
+                          Course Level:
+                        </span>
+                        <Badge
+                          className={getLevelColor(enrollment.courseId.level)}
+                        >
+                          {enrollment.courseId.level.charAt(0).toUpperCase() +
+                            enrollment.courseId.level.slice(1)}
+                        </Badge>
+                      </div>
+                    )}
 
                     {/* User Level */}
                     {enrollment.userLevel && (

@@ -6,7 +6,6 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import {
   useGetMyEnrollmentByIdQuery,
-  useUpdateProgressMutation,
   useUpdateUserLevelMutation,
   useUnenrollFromCourseMutation,
 } from "@/redux/features/enrollment/enrollment.api";
@@ -20,7 +19,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
@@ -50,7 +48,6 @@ export default function EnrollmentDetailPage() {
   const params = useParams();
   const router = useRouter();
   const enrollmentId = params.id as string;
-  const [progress, setProgress] = useState<number>(0);
   const [userLevel, setUserLevel] = useState<number>(5);
   const [showUnenrollDialog, setShowUnenrollDialog] = useState(false);
 
@@ -59,8 +56,6 @@ export default function EnrollmentDetailPage() {
     isLoading,
     error,
   } = useGetMyEnrollmentByIdQuery(enrollmentId);
-  const [updateProgress, { isLoading: isUpdatingProgress }] =
-    useUpdateProgressMutation();
   const [updateUserLevel, { isLoading: isUpdatingLevel }] =
     useUpdateUserLevelMutation();
   const [unenroll, { isLoading: isUnenrolling }] =
@@ -68,26 +63,9 @@ export default function EnrollmentDetailPage() {
 
   useEffect(() => {
     if (enrollment) {
-      setProgress(enrollment.progress);
       setUserLevel(enrollment.userLevel || 5);
     }
   }, [enrollment]);
-
-  const handleUpdateProgress = async () => {
-    try {
-      await updateProgress({
-        id: enrollmentId,
-        data: { progress },
-      }).unwrap();
-      toast.success("Progress updated successfully!");
-    } catch (error: any) {
-      const errorMessage =
-        error?.data?.message ||
-        error?.message ||
-        "Failed to update progress. Please try again.";
-      toast.error(errorMessage);
-    }
-  };
 
   const handleUpdateUserLevel = async () => {
     try {
@@ -197,17 +175,6 @@ export default function EnrollmentDetailPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {/* Progress */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Progress</span>
-                  <span className="text-sm font-semibold">
-                    {enrollment.progress}%
-                  </span>
-                </div>
-                <Progress value={enrollment.progress} className="h-3" />
-              </div>
-
               {/* Info Grid */}
               <div className="grid grid-cols-2 gap-4 pt-4 border-t">
                 <div>
@@ -234,58 +201,11 @@ export default function EnrollmentDetailPage() {
         </Card>
       </motion.div>
 
-      {/* Update Progress */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.1 }}
-      >
-        <Card>
-          <CardHeader>
-            <CardTitle>Update Progress</CardTitle>
-            <CardDescription>
-              Track your progress through this course (0-100%)
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="progress">Progress (%)</Label>
-              <Input
-                id="progress"
-                type="number"
-                min="0"
-                max="100"
-                value={progress}
-                onChange={(e) => setProgress(Number(e.target.value))}
-              />
-              <Progress value={progress} className="h-2" />
-            </div>
-            <Button
-              onClick={handleUpdateProgress}
-              disabled={isUpdatingProgress}
-              className="w-full"
-            >
-              {isUpdatingProgress ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Updating...
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Update Progress
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-      </motion.div>
-
       {/* Update User Level */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.2 }}
+        transition={{ duration: 0.3, delay: 0.1 }}
       >
         <Card>
           <CardHeader>
@@ -335,7 +255,7 @@ export default function EnrollmentDetailPage() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.3 }}
+        transition={{ duration: 0.3, delay: 0.2 }}
         className="flex gap-4"
       >
         <Link

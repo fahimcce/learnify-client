@@ -4,7 +4,6 @@ export interface Course {
   _id: string;
   courseName: string;
   courseCode: string;
-  level: "beginner" | "intermediate" | "advanced";
   isDeleted: boolean;
   createdAt: string;
   updatedAt: string;
@@ -13,13 +12,11 @@ export interface Course {
 export interface CreateCoursePayload {
   courseName: string;
   courseCode: string;
-  level: "beginner" | "intermediate" | "advanced";
 }
 
 export interface UpdateCoursePayload {
   courseName?: string;
   courseCode?: string;
-  level?: "beginner" | "intermediate" | "advanced";
 }
 
 const courseApi = api.injectEndpoints({

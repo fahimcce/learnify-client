@@ -4,7 +4,6 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   useGetAllEnrollmentsQuery,
-  useUpdateEnrollmentStatusMutation,
   useDeleteEnrollmentMutation,
   useHardDeleteEnrollmentMutation,
   useGetEnrollmentStatisticsQuery,
@@ -19,7 +18,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -57,8 +55,6 @@ export default function AdminEnrollmentsPage() {
     status: statusFilter !== "all" ? statusFilter : undefined,
   });
   const { data: statistics } = useGetEnrollmentStatisticsQuery();
-  const [updateStatus, { isLoading: isUpdatingStatus }] =
-    useUpdateEnrollmentStatusMutation();
   const [deleteEnrollment, { isLoading: isDeleting }] =
     useDeleteEnrollmentMutation();
   const [hardDeleteEnrollment, { isLoading: isHardDeleting }] =
@@ -78,29 +74,6 @@ export default function AdminEnrollmentsPage() {
         return "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400";
       default:
         return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400";
-    }
-  };
-
-  const handleUpdateStatus = async (
-    enrollmentId: string,
-    status: string,
-    progress?: number
-  ) => {
-    try {
-      await updateStatus({
-        id: enrollmentId,
-        data: {
-          status: status as any,
-          progress,
-        },
-      }).unwrap();
-      toast.success("Enrollment status updated successfully!");
-    } catch (error: any) {
-      const errorMessage =
-        error?.data?.message ||
-        error?.message ||
-        "Failed to update enrollment status. Please try again.";
-      toast.error(errorMessage);
     }
   };
 
@@ -239,7 +212,7 @@ export default function AdminEnrollmentsPage() {
                     <div className="flex-1">
                       <div className="flex items-center gap-3">
                         <h3 className="font-semibold text-lg">
-                          {enrollment.courseId.courseName}
+                          {enrollment.courseId?.courseName || "Unknown Course"}
                         </h3>
                         <Badge className={getStatusColor(enrollment.status)}>
                           {enrollment.status.charAt(0).toUpperCase() +
@@ -247,20 +220,16 @@ export default function AdminEnrollmentsPage() {
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground font-mono mt-1">
-                        {enrollment.courseId.courseCode}
+                        {enrollment.courseId?.courseCode || "N/A"}
                       </p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Student: {enrollment.userId.name} ({enrollment.userId.email})
+                        Student: {enrollment.userId?.name || "Unknown"} (
+                        {enrollment.userId?.email || "N/A"})
                       </p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Progress</p>
-                      <p className="font-semibold">{enrollment.progress}%</p>
-                      <Progress value={enrollment.progress} className="h-2 mt-1" />
-                    </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {enrollment.userLevel && (
                       <div>
                         <p className="text-xs text-muted-foreground">
@@ -276,7 +245,9 @@ export default function AdminEnrollmentsPage() {
                         Enrollment Date
                       </p>
                       <p className="font-semibold text-sm">
-                        {new Date(enrollment.enrollmentDate).toLocaleDateString()}
+                        {new Date(
+                          enrollment.enrollmentDate
+                        ).toLocaleDateString()}
                       </p>
                     </div>
                     {enrollment.completionDate && (
@@ -294,26 +265,6 @@ export default function AdminEnrollmentsPage() {
                   </div>
 
                   <div className="flex gap-2 pt-2 border-t">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        handleUpdateStatus(enrollment._id, "completed", 100)
-                      }
-                      disabled={isUpdatingStatus || enrollment.status === "completed"}
-                    >
-                      Mark Complete
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        handleUpdateStatus(enrollment._id, "in-progress")
-                      }
-                      disabled={isUpdatingStatus || enrollment.status === "in-progress"}
-                    >
-                      Mark In Progress
-                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
@@ -421,4 +372,3 @@ export default function AdminEnrollmentsPage() {
     </div>
   );
 }
-

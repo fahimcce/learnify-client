@@ -57,7 +57,9 @@ export default function CreateNotePage() {
   const enrolledCourses = coursesArray.filter((course) =>
     enrollmentsArray.some(
       (enrollment) =>
-        enrollment.courseId._id === course._id && !enrollment.isDeleted
+        enrollment.courseId &&
+        enrollment.courseId._id === course._id &&
+        !enrollment.isDeleted
     )
   );
 

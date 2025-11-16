@@ -131,8 +131,12 @@ export function AdminSidebar() {
           <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-2">
             {adminMenuItems.map((item) => {
               const Icon = item.icon;
+              // Dashboard should only match exactly, other items can match with sub-routes
               const isActive =
-                pathname === item.href || pathname?.startsWith(item.href + "/");
+                item.href === "/admin"
+                  ? pathname === item.href
+                  : pathname === item.href ||
+                    pathname?.startsWith(item.href + "/");
               return (
                 <Link
                   key={item.href}

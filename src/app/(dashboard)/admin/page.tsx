@@ -1,6 +1,15 @@
 "use client";
 
-import { useSelector } from "react-redux";
+import {
+  useGetMyProfileQuery,
+  useGetAllUsersQuery,
+} from "@/redux/features/user/user.api";
+import { useGetAllCoursesQuery } from "@/redux/features/course/course.api";
+import { useGetAllResourcesQuery } from "@/redux/features/courseResource/courseResource.api";
+import {
+  useGetEnrollmentStatisticsQuery,
+  useGetAllEnrollmentsQuery,
+} from "@/redux/features/enrollment/enrollment.api";
 import {
   Card,
   CardContent,
@@ -8,39 +17,85 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Users, BookOpen, FileText, TrendingUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Users,
+  BookOpen,
+  FileText,
+  Loader2,
+  GraduationCap,
+  ArrowRight,
+} from "lucide-react";
+import Link from "next/link";
+import { formatDistanceToNow } from "date-fns";
 
 export default function AdminDashboard() {
-  const user = useSelector((state: any) => state.auth.user);
+  const { data: userProfile } = useGetMyProfileQuery();
+  const { data: users, isLoading: isLoadingUsers } = useGetAllUsersQuery();
+  const { data: courses, isLoading: isLoadingCourses } =
+    useGetAllCoursesQuery();
+  const { data: resources, isLoading: isLoadingResources } =
+    useGetAllResourcesQuery({});
+  const { data: enrollmentStats, isLoading: isLoadingEnrollmentStats } =
+    useGetEnrollmentStatisticsQuery();
+  const { data: enrollments, isLoading: isLoadingEnrollments } =
+    useGetAllEnrollmentsQuery({});
+
+  // Calculate statistics
+  const totalUsers = users?.filter((u) => !u.isDeleted).length || 0;
+  const totalCourses = courses?.filter((c) => !c.isDeleted).length || 0;
+  const totalResources = resources?.filter((r) => !r.isDeleted).length || 0;
+  const totalEnrollments = enrollmentStats?.totalEnrollments || 0;
+
+  // Get recent enrollments for activity
+  const recentEnrollments =
+    enrollments
+      ?.filter((e) => !e.isDeleted)
+      .sort((a, b) => {
+        const dateA = new Date(b.createdAt).getTime();
+        const dateB = new Date(a.createdAt).getTime();
+        return dateA - dateB;
+      })
+      .slice(0, 5) || [];
+
+  // Get recent courses
+  const recentCourses =
+    courses
+      ?.filter((c) => !c.isDeleted)
+      .sort((a, b) => {
+        const dateA = new Date(b.createdAt).getTime();
+        const dateB = new Date(a.createdAt).getTime();
+        return dateA - dateB;
+      })
+      .slice(0, 3) || [];
 
   const stats = [
     {
       title: "Total Users",
-      value: "1,234",
+      value: isLoadingUsers ? "..." : totalUsers.toLocaleString(),
       description: "Active users",
       icon: Users,
-      change: "+12.5%",
     },
     {
       title: "Total Courses",
-      value: "56",
+      value: isLoadingCourses ? "..." : totalCourses.toLocaleString(),
       description: "Published courses",
       icon: BookOpen,
-      change: "+5.2%",
     },
     {
       title: "Resources",
-      value: "234",
+      value: isLoadingResources ? "..." : totalResources.toLocaleString(),
       description: "Uploaded resources",
       icon: FileText,
-      change: "+8.1%",
     },
     {
-      title: "Growth",
-      value: "24%",
-      description: "This month",
-      icon: TrendingUp,
-      change: "+3.2%",
+      title: "Enrollments",
+      value: isLoadingEnrollmentStats
+        ? "..."
+        : totalEnrollments.toLocaleString(),
+      description: "Total enrollments",
+      icon: GraduationCap,
     },
   ];
 
@@ -49,7 +104,7 @@ export default function AdminDashboard() {
       {/* Welcome Section */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">
-          Welcome back, {user?.name || "Admin"}!
+          Welcome back, {userProfile?.name || "Admin"}!
         </h1>
         <p className="text-muted-foreground mt-2">
           Here's what's happening with your platform today.
@@ -73,7 +128,6 @@ export default function AdminDashboard() {
                 <p className="text-xs text-muted-foreground mt-1">
                   {stat.description}
                 </p>
-                <p className="text-xs text-green-600 mt-1">{stat.change}</p>
               </CardContent>
             </Card>
           );
@@ -85,29 +139,49 @@ export default function AdminDashboard() {
         <Card className="col-span-4">
           <CardHeader>
             <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>Latest updates and changes</CardDescription>
+            <CardDescription>Latest enrollments and updates</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">New user registered</p>
-                  <p className="text-xs text-muted-foreground">2 minutes ago</p>
-                </div>
+            {isLoadingEnrollments ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
               </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">Course published</p>
-                  <p className="text-xs text-muted-foreground">1 hour ago</p>
-                </div>
+            ) : recentEnrollments.length > 0 ? (
+              <div className="space-y-4">
+                {recentEnrollments.map((enrollment) => (
+                  <div
+                    key={enrollment._id}
+                    className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent transition-colors"
+                  >
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">
+                        {enrollment.userId?.name || "Unknown User"} enrolled in{" "}
+                        {enrollment.courseId?.courseName || "Unknown Course"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(enrollment.createdAt), {
+                          addSuffix: true,
+                        })}
+                      </p>
+                    </div>
+                    <Badge variant="outline" className="ml-2">
+                      {enrollment.status}
+                    </Badge>
+                  </div>
+                ))}
+                <Link href="/admin/enrollments">
+                  <Button variant="outline" className="w-full">
+                    View All Enrollments
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
               </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">Resource uploaded</p>
-                  <p className="text-xs text-muted-foreground">3 hours ago</p>
-                </div>
+            ) : (
+              <div className="text-center py-8">
+                <GraduationCap className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">No recent activity</p>
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
 
@@ -118,22 +192,77 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <button className="w-full text-left px-4 py-2 rounded-lg border hover:bg-accent transition-colors">
-                Manage Users
-              </button>
-              <button className="w-full text-left px-4 py-2 rounded-lg border hover:bg-accent transition-colors">
-                Create Course
-              </button>
-              <button className="w-full text-left px-4 py-2 rounded-lg border hover:bg-accent transition-colors">
-                Upload Resources
-              </button>
-              <button className="w-full text-left px-4 py-2 rounded-lg border hover:bg-accent transition-colors">
-                View Analytics
-              </button>
+              <Link href="/admin/users">
+                <Button variant="outline" className="w-full justify-start">
+                  <Users className="mr-2 h-4 w-4" />
+                  Manage Users
+                </Button>
+              </Link>
+              <Link href="/admin/courses">
+                <Button variant="outline" className="w-full justify-start">
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  Manage Courses
+                </Button>
+              </Link>
+              <Link href="/admin/resources">
+                <Button variant="outline" className="w-full justify-start">
+                  <FileText className="mr-2 h-4 w-4" />
+                  Manage Resources
+                </Button>
+              </Link>
+              <Link href="/admin/enrollments">
+                <Button variant="outline" className="w-full justify-start">
+                  <GraduationCap className="mr-2 h-4 w-4" />
+                  View Enrollments
+                </Button>
+              </Link>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Recent Courses */}
+      {recentCourses.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Courses</CardTitle>
+            <CardDescription>Newly added courses</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-3">
+              {recentCourses.map((course) => (
+                <Link
+                  key={course._id}
+                  href={`/admin/courses/${course._id}`}
+                  className="p-4 rounded-lg border hover:bg-accent transition-colors"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <BookOpen className="h-4 w-4 text-primary" />
+                    <h3 className="font-medium">{course.courseName}</h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground font-mono mb-2">
+                    {course.courseCode}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Created{" "}
+                    {formatDistanceToNow(new Date(course.createdAt), {
+                      addSuffix: true,
+                    })}
+                  </p>
+                </Link>
+              ))}
+            </div>
+            <div className="mt-4">
+              <Link href="/admin/courses">
+                <Button variant="outline" className="w-full">
+                  View All Courses
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

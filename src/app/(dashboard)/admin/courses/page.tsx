@@ -46,9 +46,6 @@ import { Badge } from "@/components/ui/badge";
 
 export default function AdminCoursesPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [levelFilter, setLevelFilter] = useState<
-    "all" | "beginner" | "intermediate" | "advanced"
-  >("all");
   const [statusFilter, setStatusFilter] = useState<
     "all" | "active" | "inactive"
   >("all");
@@ -139,26 +136,12 @@ export default function AdminCoursesPage() {
     const matchesSearch =
       course.courseName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       course.courseCode.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesLevel = levelFilter === "all" || course.level === levelFilter;
     const matchesStatus =
       statusFilter === "all" ||
       (statusFilter === "active" && !course.isDeleted) ||
       (statusFilter === "inactive" && course.isDeleted);
-    return matchesSearch && matchesLevel && matchesStatus;
+    return matchesSearch && matchesStatus;
   });
-
-  const getLevelColor = (level: string) => {
-    switch (level) {
-      case "beginner":
-        return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400";
-      case "intermediate":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400";
-      case "advanced":
-        return "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400";
-    }
-  };
 
   if (isLoading) {
     return (
@@ -205,9 +188,7 @@ export default function AdminCoursesPage() {
       <Card>
         <CardHeader>
           <CardTitle>Filters</CardTitle>
-          <CardDescription>
-            Filter courses by search, level, or status
-          </CardDescription>
+          <CardDescription>Filter courses by search or status</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4">
@@ -222,28 +203,6 @@ export default function AdminCoursesPage() {
                   className="pl-9"
                 />
               </div>
-            </div>
-
-            {/* Level Filter */}
-            <div className="sm:w-48">
-              <select
-                value={levelFilter}
-                onChange={(e) =>
-                  setLevelFilter(
-                    e.target.value as
-                      | "all"
-                      | "beginner"
-                      | "intermediate"
-                      | "advanced"
-                  )
-                }
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-              >
-                <option value="all">All Levels</option>
-                <option value="beginner">Beginner</option>
-                <option value="intermediate">Intermediate</option>
-                <option value="advanced">Advanced</option>
-              </select>
             </div>
 
             {/* Status Filter */}
@@ -264,14 +223,11 @@ export default function AdminCoursesPage() {
             </div>
 
             {/* Clear Filters */}
-            {(searchTerm ||
-              levelFilter !== "all" ||
-              statusFilter !== "all") && (
+            {(searchTerm || statusFilter !== "all") && (
               <Button
                 variant="outline"
                 onClick={() => {
                   setSearchTerm("");
-                  setLevelFilter("all");
                   setStatusFilter("all");
                 }}
               >
@@ -317,16 +273,6 @@ export default function AdminCoursesPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">
-                        Level:
-                      </span>
-                      <Badge className={getLevelColor(course.level)}>
-                        {course.level.charAt(0).toUpperCase() +
-                          course.level.slice(1)}
-                      </Badge>
-                    </div>
-
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">
                         Status:
@@ -382,18 +328,16 @@ export default function AdminCoursesPage() {
               <BookOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">No courses found</h3>
               <p className="text-muted-foreground mb-4">
-                {searchTerm || levelFilter !== "all" || statusFilter !== "all"
+                {searchTerm || statusFilter !== "all"
                   ? "Try adjusting your filters"
                   : "Get started by creating your first course"}
               </p>
-              {!searchTerm &&
-                levelFilter === "all" &&
-                statusFilter === "all" && (
-                  <Button onClick={() => setIsCreateDialogOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Course
-                  </Button>
-                )}
+              {!searchTerm && statusFilter === "all" && (
+                <Button onClick={() => setIsCreateDialogOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Course
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>

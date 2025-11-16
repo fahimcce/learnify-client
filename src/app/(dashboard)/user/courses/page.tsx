@@ -16,21 +16,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Search,
-  Loader2,
-  BookOpen,
-  ArrowRight,
-  X,
-  GraduationCap,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Search, Loader2, BookOpen, ArrowRight, X } from "lucide-react";
 
 export default function UserCoursesPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [levelFilter, setLevelFilter] = useState<
-    "all" | "beginner" | "intermediate" | "advanced"
-  >("all");
 
   const { data: courses, isLoading, error } = useGetAllCoursesQuery();
 
@@ -41,35 +30,8 @@ export default function UserCoursesPage() {
     const matchesSearch =
       course.courseName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       course.courseCode.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesLevel = levelFilter === "all" || course.level === levelFilter;
-    return matchesSearch && matchesLevel;
+    return matchesSearch;
   });
-
-  const getLevelColor = (level: string) => {
-    switch (level) {
-      case "beginner":
-        return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400";
-      case "intermediate":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400";
-      case "advanced":
-        return "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400";
-    }
-  };
-
-  const getLevelIcon = (level: string) => {
-    switch (level) {
-      case "beginner":
-        return "🌱";
-      case "intermediate":
-        return "📚";
-      case "advanced":
-        return "🚀";
-      default:
-        return "📖";
-    }
-  };
 
   if (isLoading) {
     return (
@@ -126,35 +88,12 @@ export default function UserCoursesPage() {
               </div>
             </div>
 
-            {/* Level Filter */}
-            <div className="sm:w-48">
-              <select
-                value={levelFilter}
-                onChange={(e) =>
-                  setLevelFilter(
-                    e.target.value as
-                      | "all"
-                      | "beginner"
-                      | "intermediate"
-                      | "advanced"
-                  )
-                }
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-              >
-                <option value="all">All Levels</option>
-                <option value="beginner">Beginner</option>
-                <option value="intermediate">Intermediate</option>
-                <option value="advanced">Advanced</option>
-              </select>
-            </div>
-
             {/* Clear Filters */}
-            {(searchTerm || levelFilter !== "all") && (
+            {searchTerm && (
               <Button
                 variant="outline"
                 onClick={() => {
                   setSearchTerm("");
-                  setLevelFilter("all");
                 }}
               >
                 <X className="mr-2 h-4 w-4" />
@@ -179,9 +118,7 @@ export default function UserCoursesPage() {
                 <CardHeader>
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl">
-                        {getLevelIcon(course.level)}
-                      </span>
+                      <BookOpen className="h-6 w-6 text-primary" />
                       <CardTitle className="text-xl">
                         {course.courseName}
                       </CardTitle>
@@ -193,16 +130,6 @@ export default function UserCoursesPage() {
                 </CardHeader>
                 <CardContent className="flex-1 flex flex-col">
                   <div className="space-y-4 flex-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">
-                        Level:
-                      </span>
-                      <Badge className={getLevelColor(course.level)}>
-                        {course.level.charAt(0).toUpperCase() +
-                          course.level.slice(1)}
-                      </Badge>
-                    </div>
-
                     <div className="pt-4 border-t mt-auto">
                       <Link href={`/user/courses/${course._id}`}>
                         <Button className="w-full" variant="default">
@@ -224,20 +151,19 @@ export default function UserCoursesPage() {
               <BookOpen className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">No courses found</h3>
               <p className="text-muted-foreground mb-4">
-                {searchTerm || levelFilter !== "all"
-                  ? "Try adjusting your search or filters"
+                {searchTerm
+                  ? "Try adjusting your search"
                   : "There are no courses available at the moment"}
               </p>
-              {(searchTerm || levelFilter !== "all") && (
+              {searchTerm && (
                 <Button
                   variant="outline"
                   onClick={() => {
                     setSearchTerm("");
-                    setLevelFilter("all");
                   }}
                 >
                   <X className="mr-2 h-4 w-4" />
-                  Clear Filters
+                  Clear Search
                 </Button>
               )}
             </div>

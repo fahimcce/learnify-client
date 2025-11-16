@@ -37,7 +37,6 @@ export function CourseForm({
   const [formData, setFormData] = useState({
     courseName: "",
     courseCode: "",
-    level: "beginner" as "beginner" | "intermediate" | "advanced",
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -47,13 +46,11 @@ export function CourseForm({
       setFormData({
         courseName: initialData.courseName,
         courseCode: initialData.courseCode,
-        level: initialData.level,
       });
     } else {
       setFormData({
         courseName: "",
         courseCode: "",
-        level: "beginner",
       });
     }
     setErrors({});
@@ -144,31 +141,6 @@ export function CourseForm({
               <p className="text-xs text-muted-foreground">
                 Course code will be converted to uppercase automatically
               </p>
-            </div>
-
-            {/* Course Level */}
-            <div className="space-y-2">
-              <Label htmlFor="level">
-                Course Level <span className="text-destructive">*</span>
-              </Label>
-              <select
-                id="level"
-                value={formData.level}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    level: e.target.value as
-                      | "beginner"
-                      | "intermediate"
-                      | "advanced",
-                  })
-                }
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-              >
-                <option value="beginner">Beginner</option>
-                <option value="intermediate">Intermediate</option>
-                <option value="advanced">Advanced</option>
-              </select>
             </div>
           </div>
           <DialogFooter>

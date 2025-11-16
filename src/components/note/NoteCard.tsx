@@ -31,6 +31,7 @@ interface NoteCardProps {
   onEdit?: () => void;
   onDelete?: () => void;
   onHardDelete?: () => void;
+  onView?: () => void;
 }
 
 export default function NoteCard({
@@ -41,7 +42,20 @@ export default function NoteCard({
   onEdit,
   onDelete,
   onHardDelete,
+  onView,
 }: NoteCardProps) {
+  const isTextNote = note.noteType === "text";
+  const handleTitleClick = () => {
+    if (isTextNote && onView) {
+      onView();
+    }
+  };
+
+  const handleContentClick = () => {
+    if (isTextNote && onView) {
+      onView();
+    }
+  };
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -58,7 +72,16 @@ export default function NoteCard({
               {note.noteType.charAt(0).toUpperCase() + note.noteType.slice(1)}
             </Badge>
           </div>
-          <CardTitle className="text-lg line-clamp-2">{note.title}</CardTitle>
+          <CardTitle
+            className={`text-lg line-clamp-2 ${
+              isTextNote && onView
+                ? "cursor-pointer hover:underline transition-all"
+                : ""
+            }`}
+            onClick={handleTitleClick}
+          >
+            {note.title}
+          </CardTitle>
           {note.courseId && (
             <CardDescription className="mt-1 flex items-center gap-1">
               <BookOpen className="h-3 w-3" />
@@ -66,7 +89,14 @@ export default function NoteCard({
             </CardDescription>
           )}
           {note.content && (
-            <CardDescription className="mt-2 line-clamp-2">
+            <CardDescription
+              className={`mt-2 line-clamp-2 ${
+                isTextNote && onView
+                  ? "cursor-pointer hover:underline transition-all"
+                  : ""
+              }`}
+              onClick={handleContentClick}
+            >
               {note.content}
             </CardDescription>
           )}
