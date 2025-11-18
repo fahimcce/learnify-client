@@ -13,6 +13,7 @@ import {
   Menu,
   X,
   GraduationCap,
+  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useDispatch } from "react-redux";
@@ -47,6 +48,11 @@ const adminMenuItems = [
     title: "Resources",
     href: "/admin/resources",
     icon: FileText,
+  },
+  {
+    title: "Profile",
+    href: "/admin/profile",
+    icon: User,
   },
   {
     title: "Settings",

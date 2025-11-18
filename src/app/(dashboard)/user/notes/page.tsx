@@ -4,6 +4,7 @@ import { useState } from "react";
 import React from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   useGetMyNotesQuery,
   useDeleteMyNoteMutation,
@@ -22,6 +23,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -31,14 +38,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Loader2,
   Plus,
@@ -50,25 +49,21 @@ import {
   BookOpen,
   StickyNote,
   ExternalLink,
-  ChevronDown,
   GraduationCap,
+  ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import NoteCard from "@/components/note/NoteCard";
+import CreateNoteDialog from "@/components/note/CreateNoteDialog";
 
 export default function NotesPage() {
   const router = useRouter();
-  const [noteTypeFilter, setNoteTypeFilter] = useState<string>("all");
   const [deleteNoteId, setDeleteNoteId] = useState<string | null>(null);
   const [hardDeleteNoteId, setHardDeleteNoteId] = useState<string | null>(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [editNoteId, setEditNoteId] = useState<string | null>(null);
 
-  const {
-    data: notes,
-    isLoading,
-    error,
-  } = useGetMyNotesQuery(
-    noteTypeFilter !== "all" ? { noteType: noteTypeFilter as any } : undefined
-  );
+  const { data: notes, isLoading, error, refetch } = useGetMyNotesQuery();
   const { data: enrollments } = useGetMyEnrollmentsQuery();
   const { data: courses } = useGetAllCoursesQuery();
   const [deleteNote, { isLoading: isDeleting }] = useDeleteMyNoteMutation();
@@ -90,6 +85,23 @@ export default function NotesPage() {
         !enrollment.isDeleted
     )
   );
+
+  // Group course notes by course
+  const courseNotesByCourse = courseNotes.reduce((acc, note) => {
+    if (!note.courseId) return acc;
+    const courseId = note.courseId._id;
+    if (!acc[courseId]) {
+      acc[courseId] = [];
+    }
+    acc[courseId].push(note);
+    return acc;
+  }, {} as Record<string, Note[]>);
+
+  // Create a map of enrolled courses with their note counts
+  const enrolledCoursesWithNotes = enrolledCourses.map((course) => ({
+    course,
+    noteCount: courseNotesByCourse[course._id]?.length || 0,
+  }));
 
   const getNoteTypeIcon = (type: string) => {
     switch (type) {
@@ -131,6 +143,7 @@ export default function NotesPage() {
       await deleteNote(deleteNoteId).unwrap();
       toast.success("Note deleted successfully!");
       setDeleteNoteId(null);
+      refetch();
     } catch (error: any) {
       const errorMessage =
         error?.data?.message ||
@@ -146,6 +159,7 @@ export default function NotesPage() {
       await hardDeleteNote(hardDeleteNoteId).unwrap();
       toast.success("Note permanently deleted!");
       setHardDeleteNoteId(null);
+      refetch();
     } catch (error: any) {
       const errorMessage =
         error?.data?.message ||
@@ -153,6 +167,10 @@ export default function NotesPage() {
         "Failed to delete note. Please try again.";
       toast.error(errorMessage);
     }
+  };
+
+  const handleCreateSuccess = () => {
+    refetch();
   };
 
   if (isLoading) {
@@ -180,193 +198,137 @@ export default function NotesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">My Notes</h1>
-          <p className="text-muted-foreground mt-2">
-            Manage your personal notes and course-specific notes
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button onClick={() => router.push("/user/notes/random")}>
-            <StickyNote className="mr-2 h-4 w-4" />
-            Random Notes
-          </Button>
-          {enrolledCourses.length > 0 ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create Note
-                  <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Create Note</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => router.push("/user/notes/create")}
-                >
-                  <StickyNote className="mr-2 h-4 w-4" />
-                  Random Note
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel>Course Notes</DropdownMenuLabel>
-                {enrolledCourses.map((course) => (
-                  <DropdownMenuItem
-                    key={course._id}
-                    onClick={() =>
-                      router.push(`/user/notes/create?courseId=${course._id}`)
-                    }
-                  >
-                    <GraduationCap className="mr-2 h-4 w-4" />
-                    <div className="flex flex-col">
-                      <span className="font-medium">{course.courseName}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {course.courseCode}
-                      </span>
-                    </div>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <Button onClick={() => router.push("/user/notes/create")}>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Note
-            </Button>
-          )}
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">My Notes</h1>
+        <p className="text-muted-foreground mt-2">
+          Manage your personal notes and course-specific notes
+        </p>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
-          <CardDescription>Filter notes by type</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <label className="text-sm font-medium mb-2 block">Note Type</label>
-            <select
-              value={noteTypeFilter}
-              onChange={(e) => setNoteTypeFilter(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-            >
-              <option value="all">All Types</option>
-              <option value="text">Text Notes</option>
-              <option value="pdf">PDF Notes</option>
-              <option value="image">Image Notes</option>
-            </select>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Accordions */}
+      <Accordion type="single" collapsible className="w-full space-y-4">
+        {/* Course Notes Accordion */}
+        <AccordionItem value="course-notes" className="border rounded-lg px-4">
+          <AccordionTrigger className="hover:no-underline">
+            <div className="flex items-center justify-between w-full pr-4">
+              <div className="flex items-center gap-2">
+                <GraduationCap className="h-5 w-5" />
+                <span className="text-lg font-semibold">Course Notes</span>
+                <Badge variant="secondary" className="ml-2">
+                  {courseNotes.length}
+                </Badge>
+              </div>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent>
+            <div className="space-y-4 pt-4">
+              {enrolledCoursesWithNotes.length > 0 ? (
+                <div className="space-y-3">
+                  {enrolledCoursesWithNotes.map(({ course, noteCount }) => (
+                    <Card
+                      key={course._id}
+                      className="cursor-pointer hover:shadow-md transition-shadow"
+                      onClick={() =>
+                        router.push(`/user/notes/course/${course._id}`)
+                      }
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <GraduationCap className="h-5 w-5 text-primary" />
+                            <div>
+                              <h3 className="font-semibold">
+                                {course.courseName}
+                              </h3>
+                              <p className="text-sm text-muted-foreground font-mono">
+                                {course.courseCode}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline">
+                              {noteCount} note{noteCount !== 1 ? "s" : ""}
+                            </Badge>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <GraduationCap className="mx-auto h-12 w-12 text-muted-foreground mb-3" />
+                  <p className="text-muted-foreground">
+                    No enrolled courses found. Enroll in a course to create
+                    course notes.
+                  </p>
+                </div>
+              )}
+            </div>
+          </AccordionContent>
+        </AccordionItem>
 
-      {/* Random Notes Section */}
-      {randomNotes.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold">Random Notes</h2>
-            <Link href="/user/notes/random">
-              <Button variant="outline" size="sm">
-                View All ({randomNotes.length})
-              </Button>
-            </Link>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {randomNotes.slice(0, 6).map((note: Note) => (
-              <NoteCardComponent
-                key={note._id}
-                note={note}
-                getNoteTypeIcon={getNoteTypeIcon}
-                getNoteTypeColor={getNoteTypeColor}
-                formatFileSize={formatFileSize}
-                onEdit={() => router.push(`/user/notes/${note._id}`)}
-                onDelete={() => setDeleteNoteId(note._id)}
-                onHardDelete={() => setHardDeleteNoteId(note._id)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Enrolled Courses Quick Actions */}
-      {enrolledCourses.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Create Course Notes</CardTitle>
-            <CardDescription>
-              Create notes for your enrolled courses quickly
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-              {enrolledCourses.map((course) => (
-                <Button
-                  key={course._id}
-                  variant="outline"
-                  className="h-auto py-3 flex flex-col items-start justify-start"
-                  onClick={() =>
-                    router.push(`/user/notes/create?courseId=${course._id}`)
-                  }
-                >
-                  <div className="flex items-center gap-2 w-full">
-                    <GraduationCap className="h-4 w-4 text-primary" />
-                    <span className="font-semibold text-left flex-1">
-                      {course.courseName}
-                    </span>
-                  </div>
-                  <span className="text-xs text-muted-foreground mt-1 font-mono">
-                    {course.courseCode}
-                  </span>
+        {/* Others (Random) Notes Accordion */}
+        <AccordionItem value="others" className="border rounded-lg px-4">
+          <AccordionTrigger className="hover:no-underline">
+            <div className="flex items-center justify-between w-full pr-4">
+              <div className="flex items-center gap-2">
+                <StickyNote className="h-5 w-5" />
+                <span className="text-lg font-semibold">Others</span>
+                <Badge variant="secondary" className="ml-2">
+                  {randomNotes.length}
+                </Badge>
+              </div>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent>
+            <div className="space-y-4 pt-4">
+              <div className="flex justify-end">
+                <Button onClick={() => setIsCreateDialogOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Note
                 </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+              </div>
 
-      {/* Course Notes Section */}
-      {courseNotes.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold">Course Notes</h2>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {courseNotes.slice(0, 6).map((note: Note) => (
-              <NoteCardComponent
-                key={note._id}
-                note={note}
-                getNoteTypeIcon={getNoteTypeIcon}
-                getNoteTypeColor={getNoteTypeColor}
-                formatFileSize={formatFileSize}
-                onEdit={() => router.push(`/user/notes/${note._id}`)}
-                onDelete={() => setDeleteNoteId(note._id)}
-                onHardDelete={() => setHardDeleteNoteId(note._id)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Empty State */}
-      {notesArray.length === 0 && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center py-12">
-              <StickyNote className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No notes found</h3>
-              <p className="text-muted-foreground mb-4">
-                Get started by creating your first note!
-              </p>
-              <Button onClick={() => router.push("/user/notes/create")}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create Note
-              </Button>
+              {randomNotes.length > 0 ? (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {randomNotes.map((note: Note) => (
+                    <NoteCard
+                      key={note._id}
+                      note={note}
+                      getNoteTypeIcon={getNoteTypeIcon}
+                      getNoteTypeColor={getNoteTypeColor}
+                      formatFileSize={formatFileSize}
+                      onEdit={() => setEditNoteId(note._id)}
+                      onDelete={() => setDeleteNoteId(note._id)}
+                      onHardDelete={() => setHardDeleteNoteId(note._id)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="text-center py-12">
+                      <StickyNote className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">
+                        No notes found
+                      </h3>
+                      <p className="text-muted-foreground mb-4">
+                        Get started by creating your first note!
+                      </p>
+                      <Button onClick={() => setIsCreateDialogOpen(true)}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Create Note
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog
@@ -434,119 +396,19 @@ export default function NotesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Create/Edit Note Dialog */}
+      <CreateNoteDialog
+        open={isCreateDialogOpen || !!editNoteId}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsCreateDialogOpen(false);
+            setEditNoteId(null);
+          }
+        }}
+        editNoteId={editNoteId || undefined}
+        onSuccess={handleCreateSuccess}
+      />
     </div>
-  );
-}
-
-// Note Card Component
-function NoteCardComponent({
-  note,
-  getNoteTypeIcon,
-  getNoteTypeColor,
-  formatFileSize,
-  onEdit,
-  onDelete,
-  onHardDelete,
-}: {
-  note: Note;
-  getNoteTypeIcon: (type: string) => React.ReactElement;
-  getNoteTypeColor: (type: string) => string;
-  formatFileSize: (bytes?: number) => string;
-  onEdit?: () => void;
-  onDelete?: () => void;
-  onHardDelete?: () => void;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <Card className="h-full flex flex-col hover:shadow-lg transition-shadow">
-        <CardHeader>
-          <div className="flex items-start justify-between mb-2">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              {getNoteTypeIcon(note.noteType)}
-            </div>
-            <Badge className={getNoteTypeColor(note.noteType)}>
-              {note.noteType.charAt(0).toUpperCase() + note.noteType.slice(1)}
-            </Badge>
-          </div>
-          <CardTitle className="text-lg line-clamp-2">{note.title}</CardTitle>
-          {note.courseId && (
-            <CardDescription className="mt-1 flex items-center gap-1">
-              <BookOpen className="h-3 w-3" />
-              {note.courseId.courseName} ({note.courseId.courseCode})
-            </CardDescription>
-          )}
-          {note.content && (
-            <CardDescription className="mt-2 line-clamp-2">
-              {note.content}
-            </CardDescription>
-          )}
-        </CardHeader>
-        <CardContent className="flex-1 flex flex-col">
-          <div className="space-y-4 flex-1">
-            {/* File Info */}
-            {(note.fileSize || note.fileName) && (
-              <div className="text-sm text-muted-foreground">
-                {note.fileName && (
-                  <div className="font-medium">{note.fileName}</div>
-                )}
-                {note.fileSize && (
-                  <div>Size: {formatFileSize(note.fileSize)}</div>
-                )}
-              </div>
-            )}
-
-            {/* Created Date */}
-            <div className="text-xs text-muted-foreground">
-              Created: {new Date(note.createdAt).toLocaleDateString()}
-            </div>
-
-            {/* Actions */}
-            <div className="pt-4 border-t mt-auto space-y-2">
-              {note.fileUrl && (
-                <a
-                  href={`${process.env.NEXT_PUBLIC_API_URL}${note.fileUrl}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full block"
-                >
-                  <Button className="w-full" variant="outline" size="sm">
-                    <ExternalLink className="mr-2 h-4 w-4" />
-                    {note.noteType === "pdf" ? "View PDF" : "View Image"}
-                  </Button>
-                </a>
-              )}
-              <div className="flex gap-2">
-                {onEdit && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={onEdit}
-                    className="flex-1"
-                  >
-                    <Edit className="mr-2 h-3 w-3" />
-                    Edit
-                  </Button>
-                )}
-                {onDelete && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={onDelete}
-                    className="flex-1 text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="mr-2 h-3 w-3" />
-                    Delete
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
   );
 }

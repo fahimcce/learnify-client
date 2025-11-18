@@ -30,9 +30,11 @@ interface ResourceFormProps {
     title: string;
     description?: string;
     file: File;
+    category?: "resource" | "question-bank";
   }) => Promise<void>;
   courses: Course[];
   isLoading?: boolean;
+  defaultCourseId?: string;
 }
 
 export function ResourceForm({
@@ -41,10 +43,14 @@ export function ResourceForm({
   onSubmit,
   courses,
   isLoading = false,
+  defaultCourseId,
 }: ResourceFormProps) {
-  const [courseId, setCourseId] = useState<string>("");
+  const [courseId, setCourseId] = useState<string>(defaultCourseId || "");
   const [title, setTitle] = useState<string>("");
   const [description, setDescription] = useState<string>("");
+  const [category, setCategory] = useState<"resource" | "question-bank">(
+    "resource"
+  );
   const [file, setFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -52,16 +58,17 @@ export function ResourceForm({
   // Reset form when dialog opens/closes
   useEffect(() => {
     if (!open) {
-      setCourseId("");
+      setCourseId(defaultCourseId || "");
       setTitle("");
       setDescription("");
+      setCategory("resource");
       setFile(null);
       setErrors({});
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
     }
-  }, [open]);
+  }, [open, defaultCourseId]);
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -77,7 +84,7 @@ export function ResourceForm({
     if (!file) {
       newErrors.file = "File is required";
     } else {
-      // Validate file type
+      // Validate file type - support images, PDF, PPTX, and other common files
       const allowedTypes = [
         "application/pdf", // PDF
         "application/msword", // DOC
@@ -87,6 +94,11 @@ export function ResourceForm({
         "application/vnd.ms-excel", // XLS
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // XLSX
         "text/plain", // TXT
+        "image/jpeg", // JPEG
+        "image/jpg", // JPG
+        "image/png", // PNG
+        "image/gif", // GIF
+        "image/webp", // WEBP
       ];
 
       const fileExtension = file.name.split(".").pop()?.toLowerCase();
@@ -99,6 +111,11 @@ export function ResourceForm({
         "xls",
         "xlsx",
         "txt",
+        "jpg",
+        "jpeg",
+        "png",
+        "gif",
+        "webp",
       ];
 
       if (
@@ -106,7 +123,7 @@ export function ResourceForm({
         !allowedExtensions.includes(fileExtension || "")
       ) {
         newErrors.file =
-          "File type not supported. Please upload PDF, DOC, DOCX, PPT, PPTX, XLS, XLSX, or TXT files.";
+          "File type not supported. Please upload images (JPG, PNG, GIF, WEBP), PDF, DOC, DOCX, PPT, PPTX, XLS, XLSX, or TXT files.";
       }
 
       // Validate file size (50MB max)
@@ -132,6 +149,7 @@ export function ResourceForm({
         title,
         description: description || undefined,
         file,
+        category,
       });
       onOpenChange(false);
     } catch (error) {
@@ -169,6 +187,12 @@ export function ResourceForm({
         return "📈";
       case "txt":
         return "📃";
+      case "jpg":
+      case "jpeg":
+      case "png":
+      case "gif":
+      case "webp":
+        return "🖼️";
       default:
         return "📎";
     }
@@ -178,39 +202,63 @@ export function ResourceForm({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="custom-dialog-width max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Upload Resource</DialogTitle>
+          <DialogTitle>Add Resource</DialogTitle>
           <DialogDescription>
-            Upload a file resource for a course. Supported formats: PDF, DOC,
-            DOCX, PPT, PPTX, XLS, XLSX, TXT
+            Upload a file resource or question bank for a course. Supported
+            formats: Images (JPG, PNG, GIF, WEBP), PDF, DOC, DOCX, PPT, PPTX,
+            XLS, XLSX, TXT
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 py-4">
             {/* Course Selection */}
+            {!defaultCourseId && (
+              <div className="space-y-2">
+                <Label htmlFor="courseId">
+                  Course <span className="text-destructive">*</span>
+                </Label>
+                <Select value={courseId} onValueChange={setCourseId}>
+                  <SelectTrigger
+                    id="courseId"
+                    className={errors.courseId ? "border-destructive" : ""}
+                  >
+                    <SelectValue placeholder="Select a course" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {courses
+                      .filter((course) => !course.isDeleted)
+                      .map((course) => (
+                        <SelectItem key={course._id} value={course._id}>
+                          {course.courseName} ({course.courseCode})
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                {errors.courseId && (
+                  <p className="text-sm text-destructive">{errors.courseId}</p>
+                )}
+              </div>
+            )}
+
+            {/* Category Selection */}
             <div className="space-y-2">
-              <Label htmlFor="courseId">
-                Course <span className="text-destructive">*</span>
+              <Label htmlFor="category">
+                Category <span className="text-destructive">*</span>
               </Label>
-              <Select value={courseId} onValueChange={setCourseId}>
-                <SelectTrigger
-                  id="courseId"
-                  className={errors.courseId ? "border-destructive" : ""}
-                >
-                  <SelectValue placeholder="Select a course" />
+              <Select
+                value={category}
+                onValueChange={(value) =>
+                  setCategory(value as "resource" | "question-bank")
+                }
+              >
+                <SelectTrigger id="category">
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {courses
-                    .filter((course) => !course.isDeleted)
-                    .map((course) => (
-                      <SelectItem key={course._id} value={course._id}>
-                        {course.courseName} ({course.courseCode})
-                      </SelectItem>
-                    ))}
+                  <SelectItem value="resource">Resource</SelectItem>
+                  <SelectItem value="question-bank">Question Bank</SelectItem>
                 </SelectContent>
               </Select>
-              {errors.courseId && (
-                <p className="text-sm text-destructive">{errors.courseId}</p>
-              )}
             </div>
 
             {/* Title */}
@@ -254,7 +302,7 @@ export function ResourceForm({
                 ref={fileInputRef}
                 id="file"
                 type="file"
-                accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt"
+                accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.jpg,.jpeg,.png,.gif,.webp"
                 onChange={handleFileChange}
                 className={`cursor-pointer ${
                   errors.file ? "border-destructive" : ""
@@ -290,8 +338,8 @@ export function ResourceForm({
                 </div>
               )}
               <p className="text-xs text-muted-foreground">
-                Supported formats: PDF, DOC, DOCX, PPT, PPTX, XLS, XLSX, TXT
-                (Max 50MB)
+                Supported formats: Images (JPG, PNG, GIF, WEBP), PDF, DOC, DOCX,
+                PPT, PPTX, XLS, XLSX, TXT (Max 50MB)
               </p>
             </div>
           </div>

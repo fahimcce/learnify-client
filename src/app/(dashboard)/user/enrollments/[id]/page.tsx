@@ -267,14 +267,6 @@ export default function EnrollmentDetailPage() {
             View Course
           </Button>
         </Link>
-        <Link
-          href={`/user/courses/${enrollment.courseId._id}/resources`}
-          className="flex-1"
-        >
-          <Button variant="outline" className="w-full">
-            View Resources
-          </Button>
-        </Link>
         <Button
           variant="destructive"
           onClick={() => setShowUnenrollDialog(true)}

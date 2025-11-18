@@ -11,6 +11,7 @@ export interface CourseResource {
   title: string;
   description?: string;
   resourceType: "document" | "video" | "image" | "link" | "other";
+  category?: "resource" | "question-bank";
   fileUrl?: string;
   filePath?: string;
   fileName?: string;
@@ -32,6 +33,7 @@ export interface CreateResourcePayload {
   description?: string;
   resourceType: "document" | "video" | "image" | "link" | "other";
   externalLink?: string;
+  category?: "resource" | "question-bank";
 }
 
 export interface UpdateResourcePayload {

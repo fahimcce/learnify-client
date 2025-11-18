@@ -15,6 +15,7 @@ import {
   GraduationCap,
   Sparkles,
   MessageSquare,
+  File,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useDispatch } from "react-redux";
@@ -49,6 +50,11 @@ const userMenuItems = [
     title: "Notes",
     href: "/user/notes",
     icon: FileText,
+  },
+  {
+    title: "Quizzes",
+    href: "/user/quizzes",
+    icon: File,
   },
   {
     title: "Chat",

@@ -66,43 +66,34 @@ export default function UserCoursesPage() {
       </div>
 
       {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Search & Filter</CardTitle>
-          <CardDescription>
-            Find courses that match your interests
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4">
-            {/* Search */}
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search courses by name or code..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-            </div>
 
-            {/* Clear Filters */}
-            {searchTerm && (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSearchTerm("");
-                }}
-              >
-                <X className="mr-2 h-4 w-4" />
-                Clear
-              </Button>
-            )}
+      <div className="flex flex-col sm:flex-row gap-4">
+        {/* Search */}
+        <div className="flex-1">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search courses by name or code..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9"
+            />
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* Clear Filters */}
+        {searchTerm && (
+          <Button
+            variant="outline"
+            onClick={() => {
+              setSearchTerm("");
+            }}
+          >
+            <X className="mr-2 h-4 w-4" />
+            Clear
+          </Button>
+        )}
+      </div>
 
       {/* Courses Grid */}
       {filteredCourses.length > 0 ? (

@@ -20,6 +20,12 @@ import {
   Note,
 } from "@/redux/features/note/note.api";
 import {
+  useGetMyLearningPathsQuery,
+  useGenerateLearningPathMutation,
+  useRegenerateLearningPathMutation,
+  LearningPath,
+} from "@/redux/features/learningPath/learningPath.api";
+import {
   Card,
   CardContent,
   CardDescription,
@@ -56,10 +62,14 @@ import {
   Edit,
   Trash2,
   File,
+  Target,
+  RefreshCw,
+  Download,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -73,6 +83,7 @@ import {
 import NoteCard from "@/components/note/NoteCard";
 import CreateNoteDialog from "@/components/note/CreateNoteDialog";
 import NoteDetailDialog from "@/components/note/NoteDetailDialog";
+import { ResourcesTab } from "../_components/ResourcesTab";
 
 export default function CourseDetailPage() {
   const params = useParams();
@@ -80,13 +91,17 @@ export default function CourseDetailPage() {
   const courseId = params.id as string;
   const [isEnrollDialogOpen, setIsEnrollDialogOpen] = useState(false);
   const [userLevel, setUserLevel] = useState<number>(5);
-  const [showNotes, setShowNotes] = useState(false);
+  const [activeTab, setActiveTab] = useState<
+    "learning-path" | "notes" | "resources" | null
+  >(null);
   const [noteTypeFilter, setNoteTypeFilter] = useState<string>("all");
   const [deleteNoteId, setDeleteNoteId] = useState<string | null>(null);
   const [hardDeleteNoteId, setHardDeleteNoteId] = useState<string | null>(null);
   const [isCreateNoteDialogOpen, setIsCreateNoteDialogOpen] = useState(false);
   const [editNoteId, setEditNoteId] = useState<string | null>(null);
   const [viewNoteId, setViewNoteId] = useState<string | null>(null);
+  const [showRegenerateDialog, setShowRegenerateDialog] = useState(false);
+  const [selectedPathId, setSelectedPathId] = useState<string | null>(null);
 
   const { data: course, isLoading, error } = useGetCourseByIdQuery(courseId);
   const { data: enrollments } = useGetMyEnrollmentsQuery();
@@ -98,13 +113,13 @@ export default function CourseDetailPage() {
     (e: Enrollment) => e.courseId && e.courseId._id === courseId && !e.isDeleted
   );
 
-  // Only fetch resources if user is enrolled
+  // Only fetch resources if user is enrolled and resources tab is active
   const { data: resources } = useGetCourseResourcesQuery(
     { courseId },
-    { skip: !enrollment }
+    { skip: !enrollment || activeTab !== "resources" }
   );
 
-  // Fetch notes when showNotes is true
+  // Fetch notes when notes tab is active
   const {
     data: notes,
     isLoading: isLoadingNotes,
@@ -114,7 +129,23 @@ export default function CourseDetailPage() {
       courseId,
       noteType: noteTypeFilter !== "all" ? (noteTypeFilter as any) : undefined,
     },
-    { skip: !showNotes }
+    { skip: activeTab !== "notes" }
+  );
+
+  // Fetch learning paths
+  const {
+    data: learningPaths,
+    isLoading: isLoadingPaths,
+    refetch: refetchLearningPaths,
+  } = useGetMyLearningPathsQuery();
+  const [generateLearningPath, { isLoading: isGenerating }] =
+    useGenerateLearningPathMutation();
+  const [regenerateLearningPath, { isLoading: isRegenerating }] =
+    useRegenerateLearningPathMutation();
+
+  // Find learning path for this course
+  const courseLearningPath = learningPaths?.find(
+    (path: LearningPath) => path.courseId?._id === courseId && !path.isDeleted
   );
   const [deleteNote, { isLoading: isDeleting }] = useDeleteMyNoteMutation();
   const [hardDeleteNote, { isLoading: isHardDeleting }] =
@@ -214,6 +245,44 @@ export default function CourseDetailPage() {
         error?.data?.message ||
         error?.message ||
         "Failed to enroll in course. Please try again.";
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleGenerateLearningPath = async () => {
+    if (!course) return;
+    try {
+      await generateLearningPath({
+        courseCode: course.courseCode,
+      }).unwrap();
+      toast.success("Learning path generated successfully!");
+      await refetchLearningPaths();
+      setActiveTab("learning-path");
+    } catch (error: any) {
+      const errorMessage =
+        error?.data?.message ||
+        error?.message ||
+        "Failed to generate learning path. Please try again.";
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleRegenerateLearningPath = async () => {
+    if (!selectedPathId || !course) return;
+    try {
+      await regenerateLearningPath({
+        previousPathId: selectedPathId,
+        courseCode: course.courseCode,
+      }).unwrap();
+      toast.success("Learning path regenerated successfully!");
+      await refetchLearningPaths();
+      setShowRegenerateDialog(false);
+      setSelectedPathId(null);
+    } catch (error: any) {
+      const errorMessage =
+        error?.data?.message ||
+        error?.message ||
+        "Failed to regenerate learning path. Please try again.";
       toast.error(errorMessage);
     }
   };
@@ -337,212 +406,349 @@ export default function CourseDetailPage() {
         </Card>
       </motion.div>
 
-      {/* Action Buttons */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.1 }}
-        className="flex flex-wrap gap-4"
-      >
-        {!enrollment ? (
+      {/* Action Buttons / Tabs */}
+      {!enrollment ? (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+        >
           <Button
             size="lg"
-            className="flex-1 min-w-[200px]"
+            className="w-full"
             onClick={() => setIsEnrollDialogOpen(true)}
           >
             <GraduationCap className="mr-2 h-5 w-5" />
             Enroll in Course
           </Button>
-        ) : (
-          <>
-            <Link
-              href={`/user/enrollments/${enrollment._id}`}
-              className="flex-1 min-w-[200px]"
-            >
-              <Button size="lg" className="w-full">
-                <GraduationCap className="mr-2 h-5 w-5" />
-                Continue Learning
-              </Button>
-            </Link>
-            <Link
-              href={`/user/courses/${courseId}/learning-path`}
-              className="flex-1 min-w-[200px]"
-            >
-              <Button variant="outline" size="lg" className="w-full">
-                <Sparkles className="mr-2 h-5 w-5" />
-                Learning Path
-              </Button>
-            </Link>
-            <Button
-              variant="outline"
-              size="lg"
-              className="flex-1 min-w-[200px]"
-              onClick={() => setShowNotes(!showNotes)}
-            >
-              <FileText className="mr-2 h-5 w-5" />
-              {showNotes ? "Hide Notes" : "Course Notes"}
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              className="flex-1 min-w-[200px]"
-              onClick={() => setIsCreateNoteDialogOpen(true)}
-            >
-              <StickyNote className="mr-2 h-5 w-5" />
-              Create Note
-            </Button>
-          </>
-        )}
-        <Link
-          href={`/user/courses/${courseId}/resources`}
-          className="flex-1 min-w-[200px]"
-        >
-          <Button variant="outline" size="lg" className="w-full">
-            <FileText className="mr-2 h-5 w-5" />
-            View Resources
-          </Button>
-        </Link>
-      </motion.div>
-
-      {/* Resources Preview */}
-      {enrollment &&
-        resources &&
-        Array.isArray(resources) &&
-        resources.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.2 }}
-          >
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Course Resources</CardTitle>
-                    <CardDescription>
-                      {resources.length} resource
-                      {resources.length !== 1 ? "s" : ""} available
-                    </CardDescription>
-                  </div>
-                  <Link href={`/user/courses/${courseId}/resources`}>
-                    <Button variant="outline" size="sm">
-                      View All
-                    </Button>
-                  </Link>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-3 md:grid-cols-2">
-                  {resources.slice(0, 4).map((resource) => (
-                    <div
-                      key={resource._id}
-                      className="flex items-center gap-3 p-3 border rounded-lg hover:bg-accent transition-colors"
-                    >
-                      <div className="text-muted-foreground">
-                        {getResourceTypeIcon(resource.resourceType)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{resource.title}</p>
-                        <p className="text-xs text-muted-foreground capitalize">
-                          {resource.resourceType}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
-
-      {/* Course Notes Section */}
-      {showNotes && (
+        </motion.div>
+      ) : (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.3 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
         >
           <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
+            <CardContent className="pt-6">
+              <div className="flex gap-2 border-b">
+                <Button
+                  variant="ghost"
+                  className={cn(
+                    "rounded-b-none border-b-2",
+                    activeTab === "learning-path"
+                      ? "border-primary text-primary"
+                      : "border-transparent"
+                  )}
+                  onClick={() => setActiveTab("learning-path")}
+                >
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Learning Path
+                </Button>
+                <Button
+                  variant="ghost"
+                  className={cn(
+                    "rounded-b-none border-b-2",
+                    activeTab === "notes"
+                      ? "border-primary text-primary"
+                      : "border-transparent"
+                  )}
+                  onClick={() => setActiveTab("notes")}
+                >
+                  <StickyNote className="mr-2 h-4 w-4" />
+                  View Notes
+                </Button>
+                <Button
+                  variant="ghost"
+                  className={cn(
+                    "rounded-b-none border-b-2",
+                    activeTab === "resources"
+                      ? "border-primary text-primary"
+                      : "border-transparent"
+                  )}
+                  onClick={() => setActiveTab("resources")}
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  View Resources
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {/* Tab Content */}
+      {enrollment && activeTab && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          {/* Learning Path Tab */}
+          {activeTab === "learning-path" && (
+            <Card>
+              <CardContent className="pt-6">
+                {isLoadingPaths ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : !courseLearningPath ? (
+                  <div className="text-center py-12">
+                    <Sparkles className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">
+                      No Learning Path Found
+                    </h3>
+                    <p className="text-muted-foreground mb-4">
+                      Generate a personalized AI-powered learning path for this
+                      course. This will create a step-by-step guide tailored to
+                      help you master {course.courseName}.
+                    </p>
+                    <Button
+                      onClick={handleGenerateLearningPath}
+                      disabled={isGenerating}
+                      size="lg"
+                    >
+                      {isGenerating ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Generating Learning Path...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="mr-2 h-4 w-4" />
+                          Generate Learning Path
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Learning Path Header */}
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h3 className="text-2xl font-bold mb-2">
+                          {courseLearningPath.title}
+                        </h3>
+                        <p className="text-muted-foreground">
+                          {courseLearningPath.description}
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedPathId(courseLearningPath._id);
+                          setShowRegenerateDialog(true);
+                        }}
+                        disabled={isRegenerating}
+                      >
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Regenerate
+                      </Button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="flex items-center gap-3">
+                        <Clock className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm font-medium">Duration</p>
+                          <p className="text-sm text-muted-foreground">
+                            {courseLearningPath.duration}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Target className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm font-medium">Difficulty</p>
+                          <Badge variant="outline" className="mt-1">
+                            {courseLearningPath.difficulty}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <BookOpen className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm font-medium">Steps</p>
+                          <p className="text-sm text-muted-foreground">
+                            {courseLearningPath.steps.length} steps
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Prerequisites */}
+                    {courseLearningPath.prerequisites &&
+                      courseLearningPath.prerequisites.length > 0 && (
+                        <div>
+                          <h4 className="font-semibold mb-2">Prerequisites</h4>
+                          <ul className="list-disc list-inside space-y-2">
+                            {courseLearningPath.prerequisites.map(
+                              (prereq, index) => (
+                                <li
+                                  key={index}
+                                  className="text-muted-foreground"
+                                >
+                                  {prereq}
+                                </li>
+                              )
+                            )}
+                          </ul>
+                        </div>
+                      )}
+
+                    {/* Learning Outcomes */}
+                    {courseLearningPath.outcomes &&
+                      courseLearningPath.outcomes.length > 0 && (
+                        <div>
+                          <h4 className="font-semibold mb-2">
+                            Learning Outcomes
+                          </h4>
+                          <ul className="list-disc list-inside space-y-2">
+                            {courseLearningPath.outcomes.map(
+                              (outcome, index) => (
+                                <li
+                                  key={index}
+                                  className="text-muted-foreground"
+                                >
+                                  {outcome}
+                                </li>
+                              )
+                            )}
+                          </ul>
+                        </div>
+                      )}
+
+                    {/* Learning Steps */}
+                    <div>
+                      <h4 className="font-semibold mb-4">Learning Steps</h4>
+                      <div className="space-y-6">
+                        {courseLearningPath.steps.map((step, index) => (
+                          <div
+                            key={index}
+                            className="border-l-4 border-primary pl-4 py-2"
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="shrink-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold">
+                                {step.stepNumber}
+                              </div>
+                              <div className="flex-1">
+                                <h5 className="font-semibold text-lg">
+                                  {step.title}
+                                </h5>
+                                <p className="text-muted-foreground mt-1">
+                                  {step.description}
+                                </p>
+                                <div className="mt-3 space-y-2">
+                                  {step.learningObjectives &&
+                                    step.learningObjectives.length > 0 && (
+                                      <div>
+                                        <p className="text-sm font-medium">
+                                          Learning Objectives:
+                                        </p>
+                                        <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                                          {step.learningObjectives.map(
+                                            (obj, idx) => (
+                                              <li key={idx}>{obj}</li>
+                                            )
+                                          )}
+                                        </ul>
+                                      </div>
+                                    )}
+                                  {step.resources &&
+                                    step.resources.length > 0 && (
+                                      <div>
+                                        <p className="text-sm font-medium">
+                                          Resources:
+                                        </p>
+                                        <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                                          {step.resources.map(
+                                            (resource, idx) => (
+                                              <li key={idx}>{resource}</li>
+                                            )
+                                          )}
+                                        </ul>
+                                      </div>
+                                    )}
+                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <Clock className="h-4 w-4" />
+                                    <span>
+                                      Estimated time: {step.estimatedTime}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Notes Tab */}
+          {activeTab === "notes" && (
+            <Card>
+              <CardHeader>
                 <div>
                   <CardTitle>Course Notes</CardTitle>
                   <CardDescription>
-                    {notesArray.length} note{notesArray.length !== 1 ? "s" : ""}{" "}
-                    available for this course
+                    {notesArray.length} note
+                    {notesArray.length !== 1 ? "s" : ""} available for this
+                    course
                   </CardDescription>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsCreateNoteDialogOpen(true)}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create Note
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {/* Filter */}
-              <div className="mb-4">
-                <label className="text-sm font-medium mb-2 block">
-                  Filter by Type
-                </label>
-                <select
-                  value={noteTypeFilter}
-                  onChange={(e) => setNoteTypeFilter(e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                >
-                  <option value="all">All Types</option>
-                  <option value="text">Text Notes</option>
-                  <option value="pdf">PDF Notes</option>
-                  <option value="image">Image Notes</option>
-                </select>
-              </div>
+              </CardHeader>
+              <CardContent>
+                {/* Notes Grid */}
+                {isLoadingNotes ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : notesArray.length > 0 ? (
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {notesArray.map((note: Note) => (
+                      <NoteCard
+                        key={note._id}
+                        note={note}
+                        getNoteTypeIcon={getNoteTypeIcon}
+                        getNoteTypeColor={getNoteTypeColor}
+                        formatFileSize={formatFileSize}
+                        onView={() => setViewNoteId(note._id)}
+                        onEdit={() => {
+                          setEditNoteId(note._id);
+                          setIsCreateNoteDialogOpen(true);
+                        }}
+                        onDelete={() => setDeleteNoteId(note._id)}
+                        onHardDelete={() => setHardDeleteNoteId(note._id)}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <StickyNote className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">
+                      No course notes found
+                    </h3>
+                    <p className="text-muted-foreground">
+                      No notes are available for this course yet.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
-              {/* Notes Grid */}
-              {isLoadingNotes ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-              ) : notesArray.length > 0 ? (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {notesArray.map((note: Note) => (
-                    <NoteCard
-                      key={note._id}
-                      note={note}
-                      getNoteTypeIcon={getNoteTypeIcon}
-                      getNoteTypeColor={getNoteTypeColor}
-                      formatFileSize={formatFileSize}
-                      onView={() => setViewNoteId(note._id)}
-                      onEdit={() => {
-                        setEditNoteId(note._id);
-                        setIsCreateNoteDialogOpen(true);
-                      }}
-                      onDelete={() => setDeleteNoteId(note._id)}
-                      onHardDelete={() => setHardDeleteNoteId(note._id)}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <StickyNote className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">
-                    No course notes found
-                  </h3>
-                  <p className="text-muted-foreground mb-4">
-                    {noteTypeFilter !== "all"
-                      ? "Try adjusting your filters"
-                      : `Get started by creating your first note for ${course?.courseName}!`}
-                  </p>
-                  <Button onClick={() => setIsCreateNoteDialogOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Course Note
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {/* Resources Tab */}
+          {activeTab === "resources" && (
+            <ResourcesTab
+              resources={resources || []}
+              getResourceTypeIcon={getResourceTypeIcon}
+              formatFileSize={formatFileSize}
+            />
+          )}
         </motion.div>
       )}
 
@@ -627,7 +833,7 @@ export default function CourseDetailPage() {
         editNoteId={editNoteId || undefined}
         onSuccess={() => {
           // Refetch notes after successful creation/update
-          if (showNotes) {
+          if (activeTab === "notes") {
             refetchNotes();
           }
           setEditNoteId(null); // Reset edit mode after success
@@ -651,6 +857,40 @@ export default function CourseDetailPage() {
           }
         }}
       />
+
+      {/* Regenerate Learning Path Dialog */}
+      <AlertDialog
+        open={showRegenerateDialog}
+        onOpenChange={setShowRegenerateDialog}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Regenerate Learning Path?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will generate a new learning path for this course. The
+              previous path will be replaced.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isRegenerating}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRegenerateLearningPath}
+              disabled={isRegenerating}
+            >
+              {isRegenerating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Regenerating...
+                </>
+              ) : (
+                "Regenerate"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Enrollment Dialog */}
       <Dialog open={isEnrollDialogOpen} onOpenChange={setIsEnrollDialogOpen}>

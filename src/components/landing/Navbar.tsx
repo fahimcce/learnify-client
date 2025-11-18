@@ -18,13 +18,6 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const navItems = [
-    { name: "Features", href: "#features" },
-    { name: "How It Works", href: "#how-it-works" },
-    { name: "Testimonials", href: "#testimonials" },
-    { name: "Pricing", href: "#pricing" },
-  ];
-
   return (
     <motion.nav
       initial={{ y: -100 }}
@@ -44,26 +37,14 @@ export default function Navbar() {
               whileHover={{ scale: 1.05 }}
               className="flex items-center gap-2 cursor-pointer"
             >
-              <div className="p-2 bg-primary rounded-lg">
-                <BookOpen className="w-6 h-6 text-primary-foreground" />
-              </div>
               <span className="text-xl font-bold bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                Learnify
+                LEARNIFY
               </span>
             </motion.div>
           </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
-            {navItems.map((item) => (
-              <a
-                key={item.name}
-                href={item.href}
-                className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors"
-              >
-                {item.name}
-              </a>
-            ))}
             <Link href="/login">
               <Button>Get Started</Button>
             </Link>
@@ -94,16 +75,6 @@ export default function Navbar() {
             className="md:hidden bg-background border-t border-border"
           >
             <div className="container mx-auto px-4 py-4 space-y-4">
-              {navItems.map((item) => (
-                <a
-                  key={item.name}
-                  href={item.href}
-                  className="block text-sm font-medium text-foreground/80 hover:text-primary transition-colors py-2"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  {item.name}
-                </a>
-              ))}
               <Link href="/login" className="w-full">
                 <Button className="w-full">Get Started</Button>
               </Link>

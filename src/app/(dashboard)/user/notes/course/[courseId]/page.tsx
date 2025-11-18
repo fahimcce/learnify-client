@@ -45,14 +45,16 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import NoteCard from "@/components/note/NoteCard";
+import CreateNoteDialog from "@/components/note/CreateNoteDialog";
 
 export default function CourseNotesPage() {
   const params = useParams();
   const router = useRouter();
   const courseId = params.courseId as string;
-  const [noteTypeFilter, setNoteTypeFilter] = useState<string>("all");
   const [deleteNoteId, setDeleteNoteId] = useState<string | null>(null);
   const [hardDeleteNoteId, setHardDeleteNoteId] = useState<string | null>(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [editNoteId, setEditNoteId] = useState<string | null>(null);
 
   const { data: course, isLoading: isLoadingCourse } =
     useGetCourseByIdQuery(courseId);
@@ -60,10 +62,8 @@ export default function CourseNotesPage() {
     data: notes,
     isLoading: isLoadingNotes,
     error,
-  } = useGetMyCourseNotesQuery({
-    courseId,
-    noteType: noteTypeFilter !== "all" ? (noteTypeFilter as any) : undefined,
-  });
+    refetch,
+  } = useGetMyCourseNotesQuery({ courseId });
   const [deleteNote, { isLoading: isDeleting }] = useDeleteMyNoteMutation();
   const [hardDeleteNote, { isLoading: isHardDeleting }] =
     useHardDeleteMyNoteMutation();
@@ -110,6 +110,7 @@ export default function CourseNotesPage() {
       await deleteNote(deleteNoteId).unwrap();
       toast.success("Note deleted successfully!");
       setDeleteNoteId(null);
+      refetch();
     } catch (error: any) {
       const errorMessage =
         error?.data?.message ||
@@ -125,6 +126,7 @@ export default function CourseNotesPage() {
       await hardDeleteNote(hardDeleteNoteId).unwrap();
       toast.success("Note permanently deleted!");
       setHardDeleteNoteId(null);
+      refetch();
     } catch (error: any) {
       const errorMessage =
         error?.data?.message ||
@@ -132,6 +134,10 @@ export default function CourseNotesPage() {
         "Failed to delete note. Please try again.";
       toast.error(errorMessage);
     }
+  };
+
+  const handleCreateSuccess = () => {
+    refetch();
   };
 
   if (isLoadingCourse || isLoadingNotes) {
@@ -165,10 +171,10 @@ export default function CourseNotesPage() {
   return (
     <div className="space-y-6">
       {/* Back Button */}
-      <Link href={`/user/courses/${courseId}`}>
+      <Link href="/user/notes">
         <Button variant="ghost" className="mb-4">
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Course
+          Back to Notes
         </Button>
       </Link>
 
@@ -180,38 +186,11 @@ export default function CourseNotesPage() {
             Notes for {course.courseName} ({course.courseCode})
           </p>
         </div>
-        <Button
-          onClick={() =>
-            router.push(`/user/notes/create?courseId=${courseId}`)
-          }
-        >
+        <Button onClick={() => setIsCreateDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          Create Course Note
+          Create Note
         </Button>
       </div>
-
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
-          <CardDescription>Filter notes by type</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <label className="text-sm font-medium mb-2 block">Note Type</label>
-            <select
-              value={noteTypeFilter}
-              onChange={(e) => setNoteTypeFilter(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-            >
-              <option value="all">All Types</option>
-              <option value="text">Text Notes</option>
-              <option value="pdf">PDF Notes</option>
-              <option value="image">Image Notes</option>
-            </select>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Notes Grid */}
       {notesArray.length > 0 ? (
@@ -223,7 +202,7 @@ export default function CourseNotesPage() {
               getNoteTypeIcon={getNoteTypeIcon}
               getNoteTypeColor={getNoteTypeColor}
               formatFileSize={formatFileSize}
-              onEdit={() => router.push(`/user/notes/${note._id}`)}
+              onEdit={() => setEditNoteId(note._id)}
               onDelete={() => setDeleteNoteId(note._id)}
               onHardDelete={() => setHardDeleteNoteId(note._id)}
             />
@@ -234,19 +213,15 @@ export default function CourseNotesPage() {
           <CardContent className="pt-6">
             <div className="text-center py-12">
               <StickyNote className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No course notes found</h3>
+              <h3 className="text-lg font-semibold mb-2">
+                No course notes found
+              </h3>
               <p className="text-muted-foreground mb-4">
-                {noteTypeFilter !== "all"
-                  ? "Try adjusting your filters"
-                  : `Get started by creating your first note for ${course.courseName}!`}
+                Get started by creating your first note for {course.courseName}!
               </p>
-              <Button
-                onClick={() =>
-                  router.push(`/user/notes/create?courseId=${courseId}`)
-                }
-              >
+              <Button onClick={() => setIsCreateDialogOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
-                Create Course Note
+                Create Note
               </Button>
             </div>
           </CardContent>
@@ -319,7 +294,21 @@ export default function CourseNotesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Create/Edit Note Dialog */}
+      <CreateNoteDialog
+        open={isCreateDialogOpen || !!editNoteId}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsCreateDialogOpen(false);
+            setEditNoteId(null);
+          }
+        }}
+        courseId={courseId}
+        courseName={course.courseName}
+        editNoteId={editNoteId || undefined}
+        onSuccess={handleCreateSuccess}
+      />
     </div>
   );
 }
-
