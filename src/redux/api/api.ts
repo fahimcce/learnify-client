@@ -29,6 +29,7 @@ export const api = createApi({
     "learningPath",
     "note",
     "chat",
+    "quiz",
   ],
   endpoints: () => ({}),
 });

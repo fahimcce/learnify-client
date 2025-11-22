@@ -14,6 +14,7 @@ import {
   X,
   GraduationCap,
   User,
+  ClipboardList,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useDispatch } from "react-redux";
@@ -48,6 +49,11 @@ const adminMenuItems = [
     title: "Resources",
     href: "/admin/resources",
     icon: FileText,
+  },
+  {
+    title: "Quizzes",
+    href: "/admin/quizzes",
+    icon: ClipboardList,
   },
   {
     title: "Profile",

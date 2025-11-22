@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
 import { ReduxProvider } from "@/components/providers/ReduxProvider";
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { Toaster } from "sonner";
 
 const montserrat = Montserrat({
@@ -12,9 +13,11 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "Learnify - AI-Powered E-Learning Platform",
-  description:
-    "Transform your learning journey with personalized AI tutoring, adaptive assessments, and intelligent study plans. Learn smarter, not harder with Learnify.",
+  title: "LEARNIFY",
+  description: "AI based Learning Management System",
+  // icons: {
+  //   icon: "/favicon.ico",
+  // },
 };
 
 export default function RootLayout({
@@ -23,12 +26,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${montserrat.variable} font-sans antialiased`}>
-        <ReduxProvider>
-          {children}
-          <Toaster position="top-center" richColors />
-        </ReduxProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <ReduxProvider>
+            {children}
+            <Toaster position="top-center" richColors />
+          </ReduxProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

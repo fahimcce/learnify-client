@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { useGetMyEnrollmentsQuery } from "@/redux/features/enrollment/enrollment.api";
-import { useGetAvailableQuizSetsQuery } from "@/redux/features/quiz/quiz.api";
+import { useGetAllCoursesQuery } from "@/redux/features/course/course.api";
+import { useGetAllQuizSetsQuery } from "@/redux/features/quiz/quiz.api";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -12,73 +13,62 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
-  BookOpen,
-  Loader2,
+  Plus,
   Search,
+  Loader2,
+  BookOpen,
   ClipboardList,
-  ArrowRight,
   X,
+  ArrowRight,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-export default function UserQuizzesPage() {
+export default function AdminQuizzesPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
 
   const {
-    data: enrollments,
-    isLoading: isLoadingEnrollments,
-    error: enrollmentsError,
-  } = useGetMyEnrollmentsQuery();
-  const {
-    data: quizSets,
-    isLoading: isLoadingQuizSets,
-    error: quizSetsError,
-  } = useGetAvailableQuizSetsQuery();
+    data: courses,
+    isLoading: isLoadingCourses,
+    error: coursesError,
+  } = useGetAllCoursesQuery();
+  const { data: quizSets, isLoading: isLoadingQuizSets } =
+    useGetAllQuizSetsQuery();
 
-  // Get enrolled courses and match with quiz sets
-  const enrollmentsArray = Array.isArray(enrollments) ? enrollments : [];
+  // Calculate quiz set count per course
   const quizSetsArray = Array.isArray(quizSets) ? quizSets : [];
+  const coursesArray = Array.isArray(courses) ? courses : [];
 
-  // Get all enrolled courses (show all, even if no quiz sets)
-  const coursesWithQuizzes = enrollmentsArray
-    .filter(
-      (enrollment) =>
-        !enrollment.isDeleted && enrollment.courseId && enrollment.courseId._id
-    )
-    .map((enrollment) => {
-      const courseId = enrollment.courseId._id;
-      const courseQuizSets = quizSetsArray.filter((quizSet) => {
-        const quizSetCourseId =
+  const coursesWithQuizCount = coursesArray
+    .filter((course) => !course.isDeleted)
+    .map((course) => {
+      const quizCount = quizSetsArray.filter((quizSet) => {
+        const courseId =
           typeof quizSet.course === "string"
             ? quizSet.course
             : quizSet.course?._id;
-        return quizSetCourseId === courseId && !quizSet.isDeleted;
-      });
-
+        return courseId === course._id && !quizSet.isDeleted;
+      }).length;
       return {
-        course: enrollment.courseId,
-        enrollment: enrollment,
-        quizSetCount: courseQuizSets.length,
+        ...course,
+        quizCount,
       };
     });
 
   // Filter courses
-  const filteredCourses = coursesWithQuizzes.filter((item) => {
-    const courseName = item.course.courseName.toLowerCase();
-    const courseCode = item.course.courseCode.toLowerCase();
-    const search = searchTerm.toLowerCase();
-    return courseName.includes(search) || courseCode.includes(search);
+  const filteredCourses = coursesWithQuizCount.filter((course) => {
+    return (
+      course.courseName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      course.courseCode.toLowerCase().includes(searchTerm.toLowerCase())
+    );
   });
 
   const handleCourseClick = (courseId: string) => {
-    router.push(`/user/quizzes/course/${courseId}`);
+    router.push(`/admin/quizzes/course/${courseId}`);
   };
 
-  if (isLoadingEnrollments) {
+  if (isLoadingCourses || isLoadingQuizSets) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -86,15 +76,17 @@ export default function UserQuizzesPage() {
     );
   }
 
-  if (enrollmentsError) {
+  if (coursesError) {
     return (
-      <Card className="border-destructive">
-        <CardContent className="pt-6">
-          <p className="text-destructive text-center">
-            Failed to load enrollments. Please try again.
-          </p>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card className="border-destructive">
+          <CardContent className="pt-6">
+            <p className="text-destructive text-center">
+              Failed to load courses. Please try again.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
@@ -105,7 +97,7 @@ export default function UserQuizzesPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Quizzes</h1>
           <p className="text-muted-foreground mt-2">
-            Select a course to view available quiz sets
+            Select a course to manage its quiz sets
           </p>
         </div>
       </div>
@@ -113,26 +105,26 @@ export default function UserQuizzesPage() {
       {/* Courses Grid */}
       {filteredCourses.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredCourses.map((item) => (
+          {filteredCourses.map((course) => (
             <motion.div
-              key={item.course._id}
+              key={course._id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
             >
               <Card
                 className="cursor-pointer hover:shadow-lg transition-shadow duration-200 hover:border-primary"
-                onClick={() => handleCourseClick(item.course._id)}
+                onClick={() => handleCourseClick(course._id)}
               >
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <CardTitle className="text-xl flex items-center gap-2">
                         <BookOpen className="h-5 w-5 text-primary" />
-                        {item.course.courseName}
+                        {course.courseName}
                       </CardTitle>
                       <CardDescription className="mt-1 font-mono">
-                        {item.course.courseCode}
+                        {course.courseCode}
                       </CardDescription>
                     </div>
                     <ArrowRight className="h-5 w-5 text-muted-foreground shrink-0" />
@@ -143,22 +135,12 @@ export default function UserQuizzesPage() {
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground flex items-center gap-2">
                         <ClipboardList className="h-4 w-4" />
-                        Available Quiz Sets:
+                        Quiz Sets:
                       </span>
-                      <Badge
-                        variant={
-                          item.quizSetCount > 0 ? "secondary" : "outline"
-                        }
-                        className="text-lg px-3 py-1"
-                      >
-                        {item.quizSetCount}
+                      <Badge variant="secondary" className="text-lg px-3 py-1">
+                        {course.quizCount}
                       </Badge>
                     </div>
-                    {item.quizSetCount === 0 && (
-                      <p className="text-xs text-muted-foreground italic">
-                        No quiz sets available yet
-                      </p>
-                    )}
 
                     <div className="pt-2 border-t">
                       <Button
@@ -166,7 +148,7 @@ export default function UserQuizzesPage() {
                         className="w-full"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleCourseClick(item.course._id);
+                          handleCourseClick(course._id);
                         }}
                       >
                         View Quiz Sets
@@ -188,9 +170,7 @@ export default function UserQuizzesPage() {
               <p className="text-muted-foreground mb-4">
                 {searchTerm
                   ? "Try adjusting your search"
-                  : enrollmentsArray.length === 0
-                  ? "You need to enroll in courses first to take quizzes."
-                  : "No enrolled courses match your search."}
+                  : "No courses available. Create a course first to add quiz sets."}
               </p>
             </div>
           </CardContent>

@@ -4,11 +4,18 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Menu, X, BookOpen } from "lucide-react";
+import { Menu, X, BookOpen, Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -17,6 +24,16 @@ export default function Navbar() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const toggleTheme = () => {
+    if (theme === "dark") {
+      setTheme("light");
+    } else {
+      setTheme("dark");
+    }
+  };
+
+  const isDark = theme === "dark";
 
   return (
     <motion.nav
@@ -44,7 +61,22 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-4">
+            {mounted && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9"
+                onClick={toggleTheme}
+              >
+                {isDark ? (
+                  <Moon className="h-4 w-4" />
+                ) : (
+                  <Sun className="h-4 w-4" />
+                )}
+                <span className="sr-only">Toggle theme</span>
+              </Button>
+            )}
             <Link href="/login">
               <Button>Get Started</Button>
             </Link>
@@ -75,6 +107,25 @@ export default function Navbar() {
             className="md:hidden bg-background border-t border-border"
           >
             <div className="container mx-auto px-4 py-4 space-y-4">
+              {mounted && (
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start"
+                  onClick={toggleTheme}
+                >
+                  {isDark ? (
+                    <>
+                      <Moon className="mr-2 h-4 w-4" />
+                      Dark Mode
+                    </>
+                  ) : (
+                    <>
+                      <Sun className="mr-2 h-4 w-4" />
+                      Light Mode
+                    </>
+                  )}
+                </Button>
+              )}
               <Link href="/login" className="w-full">
                 <Button className="w-full">Get Started</Button>
               </Link>

@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import React from "react";
-import { motion } from "framer-motion";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   useGetMyNotesQuery,
@@ -13,13 +11,7 @@ import {
 } from "@/redux/features/note/note.api";
 import { useGetMyEnrollmentsQuery } from "@/redux/features/enrollment/enrollment.api";
 import { useGetAllCoursesQuery } from "@/redux/features/course/course.api";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -44,11 +36,7 @@ import {
   FileText,
   File,
   Image as ImageIcon,
-  Trash2,
-  Edit,
-  BookOpen,
   StickyNote,
-  ExternalLink,
   GraduationCap,
   ChevronRight,
 } from "lucide-react";
@@ -206,10 +194,13 @@ export default function NotesPage() {
       </div>
 
       {/* Accordions */}
-      <Accordion type="single" collapsible className="w-full space-y-4">
+      <Accordion type="single" collapsible className="w-full space-y-2">
         {/* Course Notes Accordion */}
-        <AccordionItem value="course-notes" className="border rounded-lg px-4">
-          <AccordionTrigger className="hover:no-underline">
+        <AccordionItem
+          value="course-notes"
+          className="border rounded-lg px-4 border-b"
+        >
+          <AccordionTrigger className="hover:no-underline cursor-pointer">
             <div className="flex items-center justify-between w-full pr-4">
               <div className="flex items-center gap-2">
                 <GraduationCap className="h-5 w-5" />
@@ -270,8 +261,11 @@ export default function NotesPage() {
         </AccordionItem>
 
         {/* Others (Random) Notes Accordion */}
-        <AccordionItem value="others" className="border rounded-lg px-4">
-          <AccordionTrigger className="hover:no-underline">
+        <AccordionItem
+          value="others"
+          className="border rounded-lg px-4 border-b last:border-b"
+        >
+          <AccordionTrigger className="hover:no-underline cursor-pointer">
             <div className="flex items-center justify-between w-full pr-4">
               <div className="flex items-center gap-2">
                 <StickyNote className="h-5 w-5" />

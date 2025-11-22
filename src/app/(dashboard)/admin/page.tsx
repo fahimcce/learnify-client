@@ -135,8 +135,8 @@ export default function AdminDashboard() {
       </div>
 
       {/* Recent Activity */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4">
+      <div className="">
+        <Card>
           <CardHeader>
             <CardTitle>Recent Activity</CardTitle>
             <CardDescription>Latest enrollments and updates</CardDescription>
@@ -182,41 +182,6 @@ export default function AdminDashboard() {
                 <p className="text-muted-foreground">No recent activity</p>
               </div>
             )}
-          </CardContent>
-        </Card>
-
-        <Card className="col-span-3">
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Common administrative tasks</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <Link href="/admin/users">
-                <Button variant="outline" className="w-full justify-start">
-                  <Users className="mr-2 h-4 w-4" />
-                  Manage Users
-                </Button>
-              </Link>
-              <Link href="/admin/courses">
-                <Button variant="outline" className="w-full justify-start">
-                  <BookOpen className="mr-2 h-4 w-4" />
-                  Manage Courses
-                </Button>
-              </Link>
-              <Link href="/admin/resources">
-                <Button variant="outline" className="w-full justify-start">
-                  <FileText className="mr-2 h-4 w-4" />
-                  Manage Resources
-                </Button>
-              </Link>
-              <Link href="/admin/enrollments">
-                <Button variant="outline" className="w-full justify-start">
-                  <GraduationCap className="mr-2 h-4 w-4" />
-                  View Enrollments
-                </Button>
-              </Link>
-            </div>
           </CardContent>
         </Card>
       </div>
