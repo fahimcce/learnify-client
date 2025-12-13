@@ -11,6 +11,15 @@ const authApi = api.injectEndpoints({
       invalidatesTags: ["auth"],
     }),
 
+    MentorSignUp: builder.mutation({
+      query: (post) => ({
+        url: "/auth/mentor/signup",
+        method: "POST",
+        body: post,
+      }),
+      invalidatesTags: ["auth"],
+    }),
+
     Login: builder.mutation({
       query: (post) => ({
         url: "/auth/login",
@@ -49,6 +58,7 @@ const authApi = api.injectEndpoints({
 
 export const {
   useSignUpMutation,
+  useMentorSignUpMutation,
   useLoginMutation,
   useChangePasswordMutation,
   useForgotPasswordMutation,

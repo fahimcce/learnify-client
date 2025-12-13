@@ -5,17 +5,13 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
-  Users,
   BookOpen,
-  FileText,
+  GraduationCap,
+  User,
   Settings,
   LogOut,
   Menu,
   X,
-  GraduationCap,
-  User,
-  ClipboardList,
-  UserPlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useDispatch } from "react-redux";
@@ -25,75 +21,46 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useState } from "react";
 
-const adminMenuItems = [
+const mentorMenuItems = [
   {
     title: "Dashboard",
-    href: "/admin",
+    href: "/mentor",
     icon: LayoutDashboard,
   },
   {
-    title: "Users",
-    href: "/admin/users",
-    icon: Users,
-  },
-  {
-    title: "Courses",
-    href: "/admin/courses",
+    title: "My Courses",
+    href: "/mentor/courses",
     icon: BookOpen,
   },
   {
-    title: "Assign Mentor",
-    href: "/admin/assign-mentor",
-    icon: UserPlus,
-  },
-  {
     title: "Enrollments",
-    href: "/admin/enrollments",
+    href: "/mentor/enrollments",
     icon: GraduationCap,
   },
   {
-    title: "Resources",
-    href: "/admin/resources",
-    icon: FileText,
-  },
-  {
-    title: "Quizzes",
-    href: "/admin/quizzes",
-    icon: ClipboardList,
-  },
-  {
     title: "Profile",
-    href: "/admin/profile",
+    href: "/mentor/profile",
     icon: User,
   },
   {
     title: "Settings",
-    href: "/admin/settings",
+    href: "/mentor/settings",
     icon: Settings,
   },
 ];
 
-export function AdminSidebar() {
+export function MentorSidebar() {
   const pathname = usePathname();
   const dispatch = useDispatch();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
-    // Clear Redux state and client-side cookies (this is synchronous and always works)
     dispatch(logout());
-
-    // Show success message
     toast.success("Logged out successfully");
-
-    // Try to clear server-side cookies (non-blocking)
     clearAuthCookies().catch((error) => {
-      // Silently handle server action errors - client-side cleanup is sufficient
       console.warn("Server-side cookie cleanup failed (non-critical):", error);
     });
-
-    // Use window.location for a hard redirect to ensure clean state
-    // This ensures middleware sees the cleared cookies
     setTimeout(() => {
       window.location.href = "/";
     }, 100);
@@ -101,7 +68,6 @@ export function AdminSidebar() {
 
   return (
     <>
-      {/* Mobile Menu Button */}
       <div className="lg:hidden fixed top-4 left-4 z-50">
         <Button
           variant="outline"
@@ -117,7 +83,6 @@ export function AdminSidebar() {
         </Button>
       </div>
 
-      {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <div
           className="lg:hidden fixed inset-0 bg-black/50 z-40"
@@ -125,7 +90,6 @@ export function AdminSidebar() {
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={cn(
           "fixed top-0 left-0 h-full w-64 bg-card border-r border-border z-50 transform transition-transform duration-300 ease-in-out",
@@ -134,24 +98,21 @@ export function AdminSidebar() {
         )}
       >
         <div className="flex flex-col h-full">
-          {/* Logo */}
           <div className="h-16 flex items-center justify-center border-b border-border px-4">
             <Link
-              href="/admin"
+              href="/mentor"
               className="text-2xl font-bold bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              Learnify Admin
+              Learnify
             </Link>
           </div>
 
-          {/* Navigation */}
           <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-2">
-            {adminMenuItems.map((item) => {
+            {mentorMenuItems.map((item) => {
               const Icon = item.icon;
-              // Dashboard should only match exactly, other items can match with sub-routes
               const isActive =
-                item.href === "/admin"
+                item.href === "/mentor"
                   ? pathname === item.href
                   : pathname === item.href ||
                     pathname?.startsWith(item.href + "/");
@@ -174,7 +135,6 @@ export function AdminSidebar() {
             })}
           </nav>
 
-          {/* Logout Button */}
           <div className="p-4 border-t border-border">
             <Button
               variant="outline"

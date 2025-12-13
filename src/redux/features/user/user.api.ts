@@ -28,7 +28,7 @@ const userApi = api.injectEndpoints({
         method: "GET",
       }),
       transformResponse: (response: { data: UserProfile }) => response.data,
-      providesTags: ["user"],
+      providesTags: [{ type: "user", id: "PROFILE" }, "user"],
     }),
 
     // Update user profile
@@ -44,6 +44,7 @@ const userApi = api.injectEndpoints({
       transformResponse: (response: { data: UserProfile }) => response.data,
       invalidatesTags: (_result, _error, { id }) => [
         { type: "user", id },
+        { type: "user", id: "PROFILE" },
         "user",
       ],
     }),
@@ -63,7 +64,7 @@ const userApi = api.injectEndpoints({
         };
       },
       transformResponse: (response: { data: UserProfile }) => response.data,
-      invalidatesTags: ["user"],
+      invalidatesTags: [{ type: "user", id: "PROFILE" }, "user"],
     }),
 
     // Admin: Get all users

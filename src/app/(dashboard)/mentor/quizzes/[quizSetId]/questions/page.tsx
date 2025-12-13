@@ -5,18 +5,23 @@ import { useParams, useRouter } from "next/navigation";
 import {
   useGetQuizSetByIdQuery,
   useGetAllQuestionsQuery,
+  useGetAllQuizSetsQuery,
   useCreateQuestionMutation,
   useCreateBulkQuestionsMutation,
   useUpdateQuestionMutation,
   useDeleteQuestionMutation,
   useHardDeleteQuestionMutation,
   Question,
-  CreateBulkQuestionsPayload,
 } from "@/redux/features/quiz/quiz.api";
-import { useGetAllQuizSetsQuery } from "@/redux/features/quiz/quiz.api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { QuestionForm } from "@/components/quiz/QuestionForm";
 import { BulkQuestionForm } from "@/components/quiz/BulkQuestionForm";
 import { OCRQuestionDialog } from "@/components/quiz/OCRQuestionDialog";
@@ -39,7 +44,7 @@ import {
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 
-export default function AdminQuestionsPage() {
+export default function MentorQuestionsPage() {
   const params = useParams();
   const router = useRouter();
   const quizSetId = params.quizSetId as string;
@@ -95,12 +100,10 @@ export default function AdminQuestionsPage() {
     }
   };
 
-  const handleCreateBulkQuestions = async (
-    data: CreateBulkQuestionsPayload
-  ) => {
+  const handleCreateBulkQuestions = async (data: any) => {
     try {
-      const result = await createBulkQuestions(data).unwrap();
-      toast.success(`${result.length} question(s) created successfully!`);
+      await createBulkQuestions(data).unwrap();
+      toast.success("Questions created successfully!");
       setIsBulkCreateDialogOpen(false);
       refetchQuestions();
     } catch (error: any) {
@@ -170,6 +173,7 @@ export default function AdminQuestionsPage() {
 
   const handleOCRQuestionsSelected = async (questions: ExtractedQuestion[]) => {
     try {
+      // Convert extracted questions to bulk format
       const bulkData = {
         quizSet: quizSetId,
         questions: questions.map((q) => ({
@@ -194,9 +198,7 @@ export default function AdminQuestionsPage() {
     }
   };
 
-  // Filter questions
   const questionsArray = Array.isArray(questions) ? questions : [];
-  const quizSetsArray = Array.isArray(quizSets) ? quizSets : [];
   const filteredQuestions = questionsArray.filter((question) => {
     return question.question.toLowerCase().includes(searchTerm.toLowerCase());
   });
@@ -361,6 +363,7 @@ export default function AdminQuestionsPage() {
         </Card>
       )}
 
+      {/* Question Forms */}
       <QuestionForm
         open={isCreateDialogOpen || isEditDialogOpen}
         onOpenChange={(open) => {
@@ -368,7 +371,7 @@ export default function AdminQuestionsPage() {
           setIsEditDialogOpen(open);
           if (!open) setSelectedQuestion(null);
         }}
-        quizSets={quizSetsArray}
+        quizSets={Array.isArray(quizSets) ? quizSets : []}
         defaultQuizSetId={quizSetId}
         initialData={selectedQuestion || undefined}
         onSubmit={
@@ -380,11 +383,12 @@ export default function AdminQuestionsPage() {
       <BulkQuestionForm
         open={isBulkCreateDialogOpen}
         onOpenChange={setIsBulkCreateDialogOpen}
-        onSubmit={handleCreateBulkQuestions}
         quizSetId={quizSetId}
+        onSubmit={handleCreateBulkQuestions}
         isLoading={isCreatingBulk}
       />
 
+      {/* OCR Dialog */}
       <OCRQuestionDialog
         open={isOCRDialogOpen}
         onOpenChange={setIsOCRDialogOpen}
@@ -392,6 +396,7 @@ export default function AdminQuestionsPage() {
         isLoading={isCreatingBulk}
       />
 
+      {/* Delete Dialogs */}
       <DeleteDialog
         open={!!deleteQuestionId}
         onOpenChange={(open) => !open && setDeleteQuestionId(null)}

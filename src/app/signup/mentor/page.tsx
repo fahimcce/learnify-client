@@ -21,20 +21,17 @@ import {
   Lock,
   Eye,
   EyeOff,
-  Sparkles,
+  User,
+  Phone,
   ArrowLeft,
+  CheckCircle2,
   Loader2,
   GraduationCap,
-  User,
 } from "lucide-react";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { useLoginMutation } from "@/redux/features/auth/auth.api";
+  useMentorSignUpMutation,
+  useLoginMutation,
+} from "@/redux/features/auth/auth.api";
 import { setUser, setToken } from "@/redux/features/auth/authSlice";
 import { setAuthCookies } from "@/lib/authActions";
 import { jwtDecode } from "jwt-decode";
@@ -43,23 +40,25 @@ import { toast } from "sonner";
 interface DecodedToken {
   email: string;
   role: string;
-  userId?: string; // User ID from token
+  userId?: string;
   exp: number;
   iat: number;
   name?: string;
 }
 
-export default function LoginPage() {
+export default function MentorSignupPage() {
   const router = useRouter();
   const dispatch = useDispatch();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [showRoleDialog, setShowRoleDialog] = useState(false);
   const [formData, setFormData] = useState({
+    name: "",
+    phone: "",
     email: "",
     password: "",
   });
 
+  const [mentorSignUp] = useMentorSignUpMutation();
   const [login] = useLoginMutation();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,49 +66,56 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await login(formData).unwrap();
+      const signUpResponse = await mentorSignUp(formData).unwrap();
 
-      if (response?.success && response?.data?.accessToken) {
-        const { accessToken } = response.data;
+      if (signUpResponse?.success) {
+        toast.success("Mentor account created successfully! Logging you in...");
 
-        // Decode token to get user info
-        const decodedToken: DecodedToken = jwtDecode(accessToken);
+        try {
+          const loginResponse = await login({
+            email: formData.email,
+            password: formData.password,
+          }).unwrap();
 
-        // Set token and user in Redux (include _id if available in token)
-        dispatch(setToken(accessToken));
-        dispatch(
-          setUser({
-            _id: decodedToken.userId, // Extract user ID from token
-            email: decodedToken.email,
-            role: decodedToken.role,
-            name: decodedToken.name,
-          })
-        );
+          if (loginResponse?.success && loginResponse?.data?.accessToken) {
+            const { accessToken } = loginResponse.data;
+            const decodedToken: DecodedToken = jwtDecode(accessToken);
+            const userName = signUpResponse?.data?.name || formData.name;
 
-        // Set cookies for middleware
-        await setAuthCookies(accessToken);
+            dispatch(setToken(accessToken));
+            dispatch(
+              setUser({
+                _id: decodedToken.userId,
+                email: decodedToken.email,
+                role: decodedToken.role,
+                name: userName,
+              })
+            );
 
-        toast.success("Login successful! Redirecting...");
+            await setAuthCookies(accessToken);
 
-        // Redirect based on role
-        setTimeout(() => {
-          if (decodedToken.role === "admin") {
-            router.push("/admin");
-          } else if (decodedToken.role === "mentor") {
-            router.push("/mentor");
-          } else {
-            router.push("/user");
+            toast.success("Welcome to Learnify! Redirecting...");
+
+            setTimeout(() => {
+              router.push("/mentor");
+            }, 500);
           }
-        }, 500);
+        } catch (loginError: any) {
+          console.error("Auto-login error:", loginError);
+          toast.error(
+            "Account created but login failed. Please login manually."
+          );
+          router.push("/login");
+        }
       } else {
-        toast.error("Login failed. Please try again.");
+        toast.error("Signup failed. Please try again.");
       }
     } catch (error: any) {
-      console.error("Login error:", error);
+      console.error("Signup error:", error);
       const errorMessage =
         error?.data?.message ||
         error?.message ||
-        "Login failed. Please check your credentials and try again.";
+        "Signup failed. Please check your information and try again.";
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
@@ -123,9 +129,12 @@ export default function LoginPage() {
     });
   };
 
+  const passwordRequirements = [
+    { text: "At least 6 characters", met: formData.password.length >= 6 },
+  ];
+
   return (
     <div className="min-h-screen flex relative overflow-hidden bg-background">
-      {/* Back to Home Link */}
       <Link
         href="/"
         className="absolute top-6 left-6 z-20 flex items-center gap-2 text-foreground hover:text-primary transition-colors bg-background/80 backdrop-blur-sm px-3 py-2 rounded-lg border border-border shadow-sm"
@@ -134,7 +143,6 @@ export default function LoginPage() {
         <span className="text-sm font-medium">Back to Home</span>
       </Link>
 
-      {/* Image Section - Hidden on mobile, visible on large screens */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-muted">
         <motion.div
           initial={{ opacity: 0, scale: 1.1 }}
@@ -143,8 +151,8 @@ export default function LoginPage() {
           className="absolute inset-0"
         >
           <Image
-            src="/images/login.png"
-            alt="Login"
+            src="/images/sign up.png"
+            alt="Mentor Sign Up"
             fill
             className="object-cover"
             priority
@@ -153,15 +161,13 @@ export default function LoginPage() {
         </motion.div>
       </div>
 
-      {/* Form Section */}
-      <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8 relative z-10">
-        <div className="w-full max-w-md">
+      <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8 relative z-10 overflow-y-auto">
+        <div className="w-full max-w-md py-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            {/* Logo and Header */}
             <div className="text-center mb-8">
               <motion.h1
                 initial={{ opacity: 0, y: 10 }}
@@ -169,9 +175,9 @@ export default function LoginPage() {
                 transition={{ duration: 0.6, delay: 0.3 }}
                 className="text-3xl font-bold mb-2"
               >
-                Welcome Back to{" "}
+                Become a{" "}
                 <span className="bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                  Learnify
+                  Mentor
                 </span>
               </motion.h1>
               <motion.p
@@ -180,21 +186,57 @@ export default function LoginPage() {
                 transition={{ duration: 0.6, delay: 0.4 }}
                 className="text-muted-foreground"
               >
-                Sign in to continue your learning journey
+                Share your knowledge and guide learners
               </motion.p>
             </div>
 
-            {/* Login Card */}
             <Card className="border-2 shadow-xl backdrop-blur-sm bg-card/95">
               <CardHeader className="space-y-1">
-                <CardTitle className="text-2xl text-center">Login</CardTitle>
+                <CardTitle className="text-2xl text-center flex items-center justify-center gap-2">
+                  <GraduationCap className="w-6 h-6 text-primary" />
+                  Mentor Registration
+                </CardTitle>
                 <CardDescription className="text-center">
-                  Enter your credentials to access your account
+                  Create your mentor account
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  {/* Email Field */}
+                  <div className="space-y-2">
+                    <Label htmlFor="name" className="flex items-center gap-2">
+                      <User className="w-4 h-4" />
+                      Full Name
+                    </Label>
+                    <Input
+                      id="name"
+                      name="name"
+                      type="text"
+                      placeholder="John Doe"
+                      value={formData.name}
+                      onChange={handleChange}
+                      required
+                      className="h-11"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="phone" className="flex items-center gap-2">
+                      <Phone className="w-4 h-4" />
+                      Phone Number
+                    </Label>
+                    <Input
+                      id="phone"
+                      name="phone"
+                      type="tel"
+                      placeholder="+1 234 567 8900"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      required
+                      className="h-11"
+                      minLength={10}
+                    />
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="email" className="flex items-center gap-2">
                       <Mail className="w-4 h-4" />
@@ -204,7 +246,7 @@ export default function LoginPage() {
                       id="email"
                       name="email"
                       type="email"
-                      placeholder="you@example.com"
+                      placeholder="mentor@example.com"
                       value={formData.email}
                       onChange={handleChange}
                       required
@@ -212,7 +254,6 @@ export default function LoginPage() {
                     />
                   </div>
 
-                  {/* Password Field */}
                   <div className="space-y-2">
                     <Label
                       htmlFor="password"
@@ -226,11 +267,12 @@ export default function LoginPage() {
                         id="password"
                         name="password"
                         type={showPassword ? "text" : "password"}
-                        placeholder="Enter your password"
+                        placeholder="Create a password"
                         value={formData.password}
                         onChange={handleChange}
                         required
                         className="h-11 pr-10"
+                        minLength={6}
                       />
                       <button
                         type="button"
@@ -244,40 +286,53 @@ export default function LoginPage() {
                         )}
                       </button>
                     </div>
+                    {formData.password && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        className="space-y-1 text-xs"
+                      >
+                        {passwordRequirements.map((req, index) => (
+                          <div
+                            key={index}
+                            className={`flex items-center gap-2 ${
+                              req.met
+                                ? "text-green-600"
+                                : "text-muted-foreground"
+                            }`}
+                          >
+                            <CheckCircle2
+                              className={`w-3 h-3 ${
+                                req.met ? "fill-current" : ""
+                              }`}
+                            />
+                            <span>{req.text}</span>
+                          </div>
+                        ))}
+                      </motion.div>
+                    )}
                   </div>
 
-                  {/* Forgot Password */}
-                  <div className="flex items-center justify-end">
-                    <Link
-                      href="/forgot-password"
-                      className="text-sm text-primary hover:underline"
-                    >
-                      Forgot password?
-                    </Link>
-                  </div>
-
-                  {/* Submit Button */}
                   <Button
                     type="submit"
-                    className="w-full h-11 text-base"
+                    className="w-full h-11 text-base mt-6"
                     size="lg"
                     disabled={isLoading}
                   >
                     {isLoading ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Signing In...
+                        Creating Account...
                       </>
                     ) : (
                       <>
-                        <Sparkles className="w-4 h-4 mr-2" />
-                        Sign In
+                        <GraduationCap className="w-4 h-4 mr-2" />
+                        Register as Mentor
                       </>
                     )}
                   </Button>
                 </form>
 
-                {/* Divider */}
                 <div className="relative my-6">
                   <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t" />
@@ -289,72 +344,22 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                {/* Sign Up Link */}
                 <div className="text-center text-sm">
                   <span className="text-muted-foreground">
-                    Don't have an account?{" "}
+                    Already have an account?{" "}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => setShowRoleDialog(true)}
+                  <Link
+                    href="/login"
                     className="font-medium text-primary hover:underline"
                   >
-                    Sign up for free
-                  </button>
+                    Sign in
+                  </Link>
                 </div>
               </CardContent>
             </Card>
           </motion.div>
         </div>
       </div>
-
-      {/* Role Selection Dialog */}
-      <Dialog open={showRoleDialog} onOpenChange={setShowRoleDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Choose Your Account Type</DialogTitle>
-            <DialogDescription>
-              Select whether you want to sign up as a student or mentor
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <button
-              onClick={() => {
-                setShowRoleDialog(false);
-                router.push("/signup");
-              }}
-              className="flex cursor-pointer items-center gap-4 p-4 rounded-lg border-2 border-border hover:border-primary hover:bg-accent transition-colors text-left"
-            >
-              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10">
-                <User className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-semibold">Student</h3>
-                <p className="text-sm text-muted-foreground">
-                  Join as a learner and start your journey
-                </p>
-              </div>
-            </button>
-            <button
-              onClick={() => {
-                setShowRoleDialog(false);
-                router.push("/signup/mentor");
-              }}
-              className="flex items-center cursor-pointer gap-4 p-4 rounded-lg border-2 border-border hover:border-primary hover:bg-accent transition-colors text-left"
-            >
-              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10">
-                <GraduationCap className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-semibold">Mentor</h3>
-                <p className="text-sm text-muted-foreground">
-                  Share your knowledge and guide learners
-                </p>
-              </div>
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useRef } from "react";
 import {
-  useGetAdminProfileQuery,
-  useUpdateAdminProfileMutation,
-  useUpdateAdminProfilePhotoMutation,
-} from "@/redux/features/admin/admin.api";
+  useGetMentorProfileQuery,
+  useUpdateMentorProfileMutation,
+  useUpdateMentorProfilePhotoMutation,
+} from "@/redux/features/mentor/mentor.api";
 import { ChangePasswordCard } from "@/components/dashboard/ChangePasswordCard";
 import {
   Card,
@@ -28,12 +28,12 @@ import {
   X,
   Loader2,
   Camera,
-  Image as ImageIcon,
+  GraduationCap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
-export default function AdminProfilePage() {
+export default function MentorProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -41,14 +41,13 @@ export default function AdminProfilePage() {
     email: "",
   });
 
-  const { data: profile, isLoading, error } = useGetAdminProfileQuery();
+  const { data: profile, isLoading, error } = useGetMentorProfileQuery();
   const [updateProfile, { isLoading: isUpdating }] =
-    useUpdateAdminProfileMutation();
+    useUpdateMentorProfileMutation();
   const [updateProfilePhoto, { isLoading: isUploadingPhoto }] =
-    useUpdateAdminProfilePhotoMutation();
+    useUpdateMentorProfilePhotoMutation();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Initialize form data when profile loads
   useEffect(() => {
     if (profile && !isEditing) {
       setFormData({
@@ -122,13 +121,11 @@ export default function AdminProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith("image/")) {
       toast.error("Please select an image file");
       return;
     }
 
-    // Validate file size (5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast.error("Image size must be less than 5MB");
       return;
@@ -153,12 +150,9 @@ export default function AdminProfilePage() {
   const getProfilePhotoUrl = (profilePhoto?: string) => {
     if (!profilePhoto) return null;
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-
     const photoPath = profilePhoto.startsWith("/")
       ? profilePhoto
       : `/${profilePhoto}`;
-    // Construct full URL: apiUrl + photoPath
-    // e.g., http://localhost:5000/api + /uploads/profile-photos/filename.png
     return `${apiUrl}${photoPath}`;
   };
 
@@ -193,12 +187,14 @@ export default function AdminProfilePage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Admin Profile</h1>
+          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+            <GraduationCap className="w-8 h-8 text-primary" />
+            Mentor Profile
+          </h1>
           <p className="text-muted-foreground mt-2">
-            Manage your personal information and account settings
+            Manage your mentor profile and account settings
           </p>
         </div>
         {!isEditing && (
@@ -209,16 +205,14 @@ export default function AdminProfilePage() {
         )}
       </div>
 
-      {/* Profile Card */}
       <Card>
         <CardHeader>
           <CardTitle>Personal Information</CardTitle>
           <CardDescription>
-            Your account information and contact details
+            Your mentor account information and contact details
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Avatar Section */}
           <div className="flex items-center gap-6 pb-6 border-b">
             <div className="relative group">
               <Avatar className="h-24 w-24">
@@ -258,14 +252,12 @@ export default function AdminProfilePage() {
               <h3 className="text-xl font-semibold">{profile.name}</h3>
               <p className="text-sm text-muted-foreground">{profile.email}</p>
               <p className="text-xs text-muted-foreground mt-1">
-                Member since {format(new Date(profile.createdAt), "MMMM yyyy")}
+                Mentor since {format(new Date(profile.createdAt), "MMMM yyyy")}
               </p>
             </div>
           </div>
 
-          {/* Form Fields */}
           <div className="grid gap-6 md:grid-cols-2">
-            {/* Name Field */}
             <div className="space-y-2">
               <Label htmlFor="name" className="flex items-center gap-2">
                 <User className="h-4 w-4" />
@@ -286,7 +278,6 @@ export default function AdminProfilePage() {
               )}
             </div>
 
-            {/* Email Field (Read-only) */}
             <div className="space-y-2">
               <Label htmlFor="email" className="flex items-center gap-2">
                 <Mail className="h-4 w-4" />
@@ -297,7 +288,6 @@ export default function AdminProfilePage() {
               </div>
             </div>
 
-            {/* Phone Field */}
             <div className="space-y-2">
               <Label htmlFor="phone" className="flex items-center gap-2">
                 <Phone className="h-4 w-4" />
@@ -320,7 +310,6 @@ export default function AdminProfilePage() {
             </div>
           </div>
 
-          {/* Account Information */}
           <div className="pt-6 border-t space-y-4">
             <h4 className="font-semibold flex items-center gap-2">
               <Calendar className="h-4 w-4" />
@@ -342,7 +331,6 @@ export default function AdminProfilePage() {
             </div>
           </div>
 
-          {/* Action Buttons */}
           {isEditing && (
             <div className="flex items-center gap-3 pt-4 border-t">
               <Button
@@ -378,7 +366,6 @@ export default function AdminProfilePage() {
 
       <ChangePasswordCard />
 
-      {/* Account Status Card */}
       <Card>
         <CardHeader>
           <CardTitle>Account Status</CardTitle>

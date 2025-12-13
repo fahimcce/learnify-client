@@ -4,6 +4,7 @@ import "./globals.css";
 import { ReduxProvider } from "@/components/providers/ReduxProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { Toaster } from "sonner";
+import ChatbotWidget from "@/components/chatbot/ChatbotWidget";
 
 const montserrat = Montserrat({
   variable: "--font-montserrat",
@@ -37,6 +38,7 @@ export default function RootLayout({
           <ReduxProvider>
             {children}
             <Toaster position="top-center" richColors />
+            <ChatbotWidget />
           </ReduxProvider>
         </ThemeProvider>
       </body>

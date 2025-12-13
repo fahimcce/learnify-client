@@ -368,6 +368,19 @@ export default function SignupPage() {
                   </div>
                 </div>
 
+                {/* Mentor Signup Link */}
+                <div className="text-center text-sm mb-2">
+                  <span className="text-muted-foreground">
+                    Are you a mentor?{" "}
+                  </span>
+                  <Link
+                    href="/signup/mentor"
+                    className="font-medium text-primary hover:underline"
+                  >
+                    Sign up as Mentor
+                  </Link>
+                </div>
+
                 {/* Login Link */}
                 <div className="text-center text-sm">
                   <span className="text-muted-foreground">

@@ -6,6 +6,7 @@ import {
   useUpdateUserProfileMutation,
   useUpdateProfilePhotoMutation,
 } from "@/redux/features/user/user.api";
+import { ChangePasswordCard } from "@/components/dashboard/ChangePasswordCard";
 import {
   Card,
   CardContent,
@@ -376,6 +377,8 @@ export default function UserProfilePage() {
           )}
         </CardContent>
       </Card>
+
+      <ChangePasswordCard />
 
       {/* Account Status Card */}
       <Card>

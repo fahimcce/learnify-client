@@ -18,14 +18,14 @@ export interface UpdateAdminProfilePayload {
 
 const adminApi = api.injectEndpoints({
   endpoints: (builder) => ({
-    // Get my profile
-    getMyProfile: builder.query<AdminProfile, void>({
+    // Get admin profile
+    getAdminProfile: builder.query<AdminProfile, void>({
       query: () => ({
         url: "/admin/my-profile",
         method: "GET",
       }),
       transformResponse: (response: { data: AdminProfile }) => response.data,
-      providesTags: ["admin"],
+      providesTags: [{ type: "admin", id: "PROFILE" }, "admin"],
     }),
 
     // Update admin profile
@@ -41,12 +41,15 @@ const adminApi = api.injectEndpoints({
       transformResponse: (response: { data: AdminProfile }) => response.data,
       invalidatesTags: (_result, _error, { id }) => [
         { type: "admin", id },
+        { type: "admin", id: "PROFILE" },
+        { type: "user", id: "PROFILE" },
         "admin",
+        "user",
       ],
     }),
 
-    // Update profile photo
-    updateProfilePhoto: builder.mutation<
+    // Update admin profile photo
+    updateAdminProfilePhoto: builder.mutation<
       AdminProfile,
       { id: string; file: File }
     >({
@@ -60,13 +63,18 @@ const adminApi = api.injectEndpoints({
         };
       },
       transformResponse: (response: { data: AdminProfile }) => response.data,
-      invalidatesTags: ["admin"],
+      invalidatesTags: [
+        { type: "admin", id: "PROFILE" },
+        { type: "user", id: "PROFILE" },
+        "admin",
+        "user",
+      ],
     }),
   }),
 });
 
 export const {
-  useGetMyProfileQuery,
+  useGetAdminProfileQuery,
   useUpdateAdminProfileMutation,
-  useUpdateProfilePhotoMutation,
+  useUpdateAdminProfilePhotoMutation,
 } = adminApi;

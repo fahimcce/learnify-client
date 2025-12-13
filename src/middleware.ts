@@ -2,13 +2,20 @@ import { NextResponse } from "next/server";
 import { NextRequest } from "next/server";
 import { getCurrenUser } from "./lib/getCurrentUser";
 
-const AuthRoutes = ["/login", "/signup", "/forgot-password", "/reset-password"];
+const AuthRoutes = [
+  "/login",
+  "/signup",
+  "/signup/mentor",
+  "/forgot-password",
+  "/reset-password",
+];
 
 type Role = keyof typeof roleBasedRoute;
 
 const roleBasedRoute = {
   admin: [/^\/admin/],
   user: [/^\/user/],
+  mentor: [/^\/mentor/],
 };
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -37,5 +44,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/user/:path*"],
+  matcher: ["/admin/:path*", "/user/:path*", "/mentor/:path*"],
 };

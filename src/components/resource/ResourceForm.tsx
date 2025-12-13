@@ -35,6 +35,7 @@ interface ResourceFormProps {
   courses: Course[];
   isLoading?: boolean;
   defaultCourseId?: string;
+  defaultCategory?: "resource" | "question-bank";
 }
 
 export function ResourceForm({
@@ -44,12 +45,13 @@ export function ResourceForm({
   courses,
   isLoading = false,
   defaultCourseId,
+  defaultCategory = "resource",
 }: ResourceFormProps) {
   const [courseId, setCourseId] = useState<string>(defaultCourseId || "");
   const [title, setTitle] = useState<string>("");
   const [description, setDescription] = useState<string>("");
   const [category, setCategory] = useState<"resource" | "question-bank">(
-    "resource"
+    defaultCategory
   );
   const [file, setFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -61,14 +63,14 @@ export function ResourceForm({
       setCourseId(defaultCourseId || "");
       setTitle("");
       setDescription("");
-      setCategory("resource");
+      setCategory(defaultCategory);
       setFile(null);
       setErrors({});
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
     }
-  }, [open, defaultCourseId]);
+  }, [open, defaultCourseId, defaultCategory]);
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -240,26 +242,28 @@ export function ResourceForm({
               </div>
             )}
 
-            {/* Category Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="category">
-                Category <span className="text-destructive">*</span>
-              </Label>
-              <Select
-                value={category}
-                onValueChange={(value) =>
-                  setCategory(value as "resource" | "question-bank")
-                }
-              >
-                <SelectTrigger id="category">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="resource">Resource</SelectItem>
-                  <SelectItem value="question-bank">Question Bank</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Category Selection - Only show if defaultCategory is not provided */}
+            {!defaultCategory && (
+              <div className="space-y-2">
+                <Label htmlFor="category">
+                  Category <span className="text-destructive">*</span>
+                </Label>
+                <Select
+                  value={category}
+                  onValueChange={(value) =>
+                    setCategory(value as "resource" | "question-bank")
+                  }
+                >
+                  <SelectTrigger id="category">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="resource">Resource</SelectItem>
+                    <SelectItem value="question-bank">Question Bank</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Title */}
             <div className="space-y-2">
