@@ -31,7 +31,7 @@ const ChatbotWidget = () => {
     {
       role: "assistant",
       content:
-        "Hi! I'm the Learnify AI assistant. Ask me anything about your courses or quizzes.",
+        "Hi! I'm your UTM AI assistant. Ask me anything about Universiti Teknologi Malaysia (UTM) - courses, faculties, campuses, and more!",
     },
   ]);
 
@@ -103,11 +103,11 @@ const ChatbotWidget = () => {
       >
         <div className="relative">
           {/* Glow Effect */}
-          <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-full blur-lg opacity-75 group-hover:opacity-100 transition duration-300 animate-pulse"></div>
+          <div className="absolute -inset-1 bg-gradient-to-r from-red-600 via-orange-600 to-amber-600 rounded-full blur-lg opacity-75 group-hover:opacity-100 transition duration-300 animate-pulse"></div>
           
           {/* Button */}
           <Button
-            className="relative h-16 w-16 rounded-full shadow-2xl bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 hover:from-blue-500 hover:via-purple-500 hover:to-pink-500 border-2 border-white/20"
+            className="relative h-16 w-16 rounded-full shadow-2xl bg-gradient-to-br from-red-700 via-red-600 to-orange-600 hover:from-red-600 hover:via-red-500 hover:to-orange-500 border-2 border-white/20"
             size="icon"
             onClick={() => setIsOpen((prev) => !prev)}
           >
@@ -123,7 +123,7 @@ const ChatbotWidget = () => {
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 rounded-full border-2 border-white flex items-center justify-center"
+              className="absolute -top-1 -right-1 h-5 w-5 bg-amber-500 rounded-full border-2 border-white flex items-center justify-center"
             >
               <Sparkles className="h-3 w-3 text-white" />
             </motion.div>
@@ -141,17 +141,17 @@ const ChatbotWidget = () => {
             transition={{ duration: 0.2 }}
             className="fixed bottom-28 right-6 z-50 w-80 sm:w-96"
           >
-            <Card className="shadow-2xl border-2 border-purple-500/20 overflow-hidden">
-              {/* Colorful Header */}
-              <CardHeader className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white pb-4">
+            <Card className="shadow-2xl border-2 border-red-500/20 overflow-hidden">
+              {/* Colorful Header - UTM Themed (Maroon/Red) */}
+              <CardHeader className="bg-gradient-to-r from-red-800 via-red-700 to-red-600 text-white pb-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
                       <Sparkles className="h-5 w-5" />
                     </div>
                     <div>
-                      <CardTitle className="text-lg font-black">Learnify AI</CardTitle>
-                      <p className="text-xs text-white/80 font-medium">Powered by Google Gemini</p>
+                      <CardTitle className="text-lg font-black tracking-tight">UTM AI Assistant</CardTitle>
+                      <p className="text-[10px] text-white/80 font-medium uppercase tracking-wider">Expert in UTM Malaysia</p>
                     </div>
                   </div>
                   <Button
@@ -166,7 +166,7 @@ const ChatbotWidget = () => {
               </CardHeader>
 
               {/* Messages */}
-              <CardContent className="h-80 overflow-y-auto space-y-3 pr-2 bg-gradient-to-b from-background to-muted/20">
+              <CardContent className="h-80 overflow-y-auto space-y-3 pr-2 bg-gradient-to-b from-background to-red-50/20 dark:to-red-900/5">
                 {messages.map((m, idx) => (
                   <motion.div
                     key={idx}
@@ -180,8 +180,8 @@ const ChatbotWidget = () => {
                     <div
                       className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm shadow-md ${
                         m.role === "assistant"
-                          ? "bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 text-foreground border border-purple-200 dark:border-purple-800"
-                          : "bg-gradient-to-br from-blue-600 to-purple-600 text-white"
+                          ? "bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 text-foreground border border-red-100 dark:border-red-800"
+                          : "bg-gradient-to-br from-red-700 to-red-600 text-white"
                       }`}
                     >
                       {m.content}
@@ -194,20 +194,19 @@ const ChatbotWidget = () => {
                     animate={{ opacity: 1, y: 0 }}
                     className="flex justify-start"
                   >
-                    <div className="max-w-[80%] rounded-2xl px-4 py-3 text-sm bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 text-foreground flex items-center gap-2 border border-purple-200 dark:border-purple-800">
-                      <Loader2 className="h-4 w-4 animate-spin text-purple-600" />
-                      <span>AI is thinking...</span>
+                    <div className="max-w-[80%] rounded-2xl px-4 py-3 text-sm bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 text-foreground flex items-center gap-2 border border-red-100 dark:border-red-800">
+                      <Loader2 className="h-4 w-4 animate-spin text-red-600" />
+                      <span>UTM AI is thinking...</span>
                     </div>
                   </motion.div>
                 )}
                 <div ref={endRef} />
               </CardContent>
 
-              {/* Input Footer */}
               <CardFooter className="pt-4 bg-muted/30">
                 <div className="flex w-full gap-2">
                   <Input
-                    placeholder="Ask me anything..."
+                    placeholder="Ask about UTM (courses, faculties...)"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={(e) => {
@@ -217,12 +216,12 @@ const ChatbotWidget = () => {
                       }
                     }}
                     disabled={isSending}
-                    className="border-purple-200 dark:border-purple-800 focus:border-purple-500"
+                    className="border-red-200 dark:border-red-800 focus:border-red-500"
                   />
                   <Button
                     onClick={sendMessage}
                     disabled={isSending}
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white shadow-lg"
+                    className="bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white shadow-lg"
                   >
                     {isSending ? (
                       <Loader2 className="h-4 w-4 animate-spin" />

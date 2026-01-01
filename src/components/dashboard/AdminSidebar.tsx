@@ -16,6 +16,7 @@ import {
   ClipboardList,
   UserPlus,
   Shield,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useDispatch } from "react-redux";
@@ -59,6 +60,11 @@ const adminMenuItems = [
     title: "Quizzes",
     href: "/admin/quizzes",
     icon: ClipboardList,
+  },
+  {
+    title: "AI Chatbot Data",
+    href: "/admin/chatbot-data",
+    icon: Sparkles,
   },
   {
     title: "Profile",

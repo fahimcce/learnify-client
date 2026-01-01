@@ -2,7 +2,7 @@
 
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useGetMyProfileQuery } from "@/redux/features/user/user.api";
-import { Bell, Search, Moon, Sun } from "lucide-react";
+import { Search, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
@@ -78,18 +78,7 @@ export function DashboardHeader() {
             </Button>
           )}
 
-          {/* Notifications */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="relative h-9 w-9 rounded-lg"
-          >
-            <Bell className="h-4 w-4" />
-            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">
-              3
-            </span>
-            <span className="sr-only">Notifications</span>
-          </Button>
+
 
           {/* User Info */}
           <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted border border-border">
