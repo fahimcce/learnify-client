@@ -11,7 +11,9 @@ export default function UserLayout({
       <UserSidebar />
       <div className="lg:pl-64">
         <DashboardHeader />
-        <main className="p-4 lg:p-6">{children}</main>
+        <main className="p-4 lg:p-6 min-h-[calc(100vh-4rem)]">
+          {children}
+        </main>
       </div>
     </div>
   );

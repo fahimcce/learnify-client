@@ -8,16 +8,16 @@ import {
   BookOpen,
   GraduationCap,
   User,
-  Settings,
   LogOut,
   Menu,
   X,
+  FileText,
+  ClipboardList,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useDispatch } from "react-redux";
 import { logout } from "@/redux/features/auth/authSlice";
 import { clearAuthCookies } from "@/lib/authActions";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useState } from "react";
 
@@ -38,21 +38,25 @@ const mentorMenuItems = [
     icon: GraduationCap,
   },
   {
+    title: "Resources",
+    href: "/mentor/resources",
+    icon: FileText,
+  },
+  {
+    title: "Quizzes",
+    href: "/mentor/quizzes",
+    icon: ClipboardList,
+  },
+  {
     title: "Profile",
     href: "/mentor/profile",
     icon: User,
-  },
-  {
-    title: "Settings",
-    href: "/mentor/settings",
-    icon: Settings,
   },
 ];
 
 export function MentorSidebar() {
   const pathname = usePathname();
   const dispatch = useDispatch();
-  const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -68,12 +72,12 @@ export function MentorSidebar() {
 
   return (
     <>
+      {/* Mobile Menu Button */}
       <div className="lg:hidden fixed top-4 left-4 z-50">
         <Button
           variant="outline"
           size="icon"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="bg-background"
         >
           {isMobileMenuOpen ? (
             <X className="h-5 w-5" />
@@ -83,13 +87,15 @@ export function MentorSidebar() {
         </Button>
       </div>
 
+      {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/50 z-40"
+          className="lg:hidden fixed inset-0 bg-black/70 z-40 backdrop-blur-sm"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
 
+      {/* Sidebar */}
       <aside
         className={cn(
           "fixed top-0 left-0 h-full w-64 bg-card border-r border-border z-50 transform transition-transform duration-300 ease-in-out",
@@ -98,17 +104,27 @@ export function MentorSidebar() {
         )}
       >
         <div className="flex flex-col h-full">
+          {/* Logo */}
           <div className="h-16 flex items-center justify-center border-b border-border px-4">
             <Link
               href="/mentor"
-              className="text-2xl font-bold bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent"
+              className="flex items-center gap-2 group"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              Learnify
+              <div className="relative">
+                <div className="absolute -inset-1 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
+                <div className="relative p-1.5 bg-muted rounded-lg border border-border">
+                  <GraduationCap className="w-5 h-5 text-primary" />
+                </div>
+              </div>
+              <span className="text-xl font-black bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+                LEARNIFY
+              </span>
             </Link>
           </div>
 
-          <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-2">
+          {/* Navigation */}
+          <nav className="flex-1 overflow-y-auto px-3 py-6 space-y-1">
             {mentorMenuItems.map((item) => {
               const Icon = item.icon;
               const isActive =
@@ -122,23 +138,29 @@ export function MentorSidebar() {
                   href={item.href}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors",
+                    "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200",
                     isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                      ? "bg-primary text-primary-foreground shadow-lg"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
                   )}
                 >
-                  <Icon className="h-5 w-5" />
+                  <Icon className={cn(
+                    "h-5 w-5 transition-transform group-hover:scale-110"
+                  )} />
                   <span>{item.title}</span>
+                  {isActive && (
+                    <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary-foreground"></div>
+                  )}
                 </Link>
               );
             })}
           </nav>
 
-          <div className="p-4 border-t border-border">
+          {/* Logout Button */}
+          <div className="p-3 border-t border-border">
             <Button
               variant="outline"
-              className="w-full justify-start"
+              className="w-full justify-start hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50"
               onClick={handleLogout}
             >
               <LogOut className="h-4 w-4 mr-2" />

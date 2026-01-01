@@ -3,19 +3,11 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   Mail,
   Lock,
@@ -26,6 +18,8 @@ import {
   Loader2,
   GraduationCap,
   User,
+  Brain,
+  BookOpen,
 } from "lucide-react";
 import {
   Dialog,
@@ -43,7 +37,7 @@ import { toast } from "sonner";
 interface DecodedToken {
   email: string;
   role: string;
-  userId?: string; // User ID from token
+  userId?: string;
   exp: number;
   iat: number;
   name?: string;
@@ -71,27 +65,21 @@ export default function LoginPage() {
 
       if (response?.success && response?.data?.accessToken) {
         const { accessToken } = response.data;
-
-        // Decode token to get user info
         const decodedToken: DecodedToken = jwtDecode(accessToken);
 
-        // Set token and user in Redux (include _id if available in token)
         dispatch(setToken(accessToken));
         dispatch(
           setUser({
-            _id: decodedToken.userId, // Extract user ID from token
+            _id: decodedToken.userId,
             email: decodedToken.email,
             role: decodedToken.role,
             name: decodedToken.name,
           })
         );
 
-        // Set cookies for middleware
         await setAuthCookies(accessToken);
-
         toast.success("Login successful! Redirecting...");
 
-        // Redirect based on role
         setTimeout(() => {
           if (decodedToken.role === "admin") {
             router.push("/admin");
@@ -124,36 +112,46 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex relative overflow-hidden bg-background">
+    <div className="min-h-screen flex relative overflow-hidden bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950">
+      {/* Animated Background */}
+      <div className="absolute inset-0 overflow-hidden">
+        <motion.div
+          className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-500/20 rounded-full blur-[120px]"
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.2, 0.3, 0.2],
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+        <motion.div
+          className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-500/15 rounded-full blur-[100px]"
+          animate={{
+            scale: [1.2, 1, 1.2],
+            opacity: [0.15, 0.25, 0.15],
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:4rem_4rem]" />
+      </div>
+
       {/* Back to Home Link */}
       <Link
         href="/"
-        className="absolute top-6 left-6 z-20 flex items-center gap-2 text-foreground hover:text-primary transition-colors bg-background/80 backdrop-blur-sm px-3 py-2 rounded-lg border border-border shadow-sm"
+        className="absolute top-6 left-6 z-20 flex items-center gap-2 text-white hover:text-blue-400 transition-colors bg-slate-800/50 backdrop-blur-md px-4 py-2 rounded-xl border border-slate-700/50 shadow-lg group"
       >
-        <ArrowLeft className="w-4 h-4" />
-        <span className="text-sm font-medium">Back to Home</span>
+        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+        <span className="text-sm font-semibold">Back to Home</span>
       </Link>
 
-      {/* Image Section - Hidden on mobile, visible on large screens */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-muted">
-        <motion.div
-          initial={{ opacity: 0, scale: 1.1 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8 }}
-          className="absolute inset-0"
-        >
-          <Image
-            src="/images/login.png"
-            alt="Login"
-            fill
-            className="object-cover"
-            priority
-            sizes="50vw"
-          />
-        </motion.div>
-      </div>
-
-      {/* Form Section */}
+      {/* Main Content */}
       <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8 relative z-10">
         <div className="w-full max-w-md">
           <motion.div
@@ -163,14 +161,25 @@ export default function LoginPage() {
           >
             {/* Logo and Header */}
             <div className="text-center mb-8">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="flex justify-center mb-4"
+              >
+                <div className="relative p-3 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl">
+                  <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl blur-lg opacity-50"></div>
+                  <Brain className="w-8 h-8 text-white relative z-10" />
+                </div>
+              </motion.div>
               <motion.h1
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.3 }}
-                className="text-3xl font-bold mb-2"
+                className="text-3xl sm:text-4xl font-black mb-2"
               >
-                Welcome Back to{" "}
-                <span className="bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                <span className="text-white">Welcome to </span>
+                <span className="bg-gradient-to-r from-blue-400 via-cyan-400 to-purple-400 bg-clip-text text-transparent">
                   Learnify
                 </span>
               </motion.h1>
@@ -178,26 +187,27 @@ export default function LoginPage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.6, delay: 0.4 }}
-                className="text-muted-foreground"
+                className="text-slate-300 text-sm"
               >
-                Sign in to continue your learning journey
+                Sign in to continue your AI-powered learning journey
               </motion.p>
             </div>
 
             {/* Login Card */}
-            <Card className="border-2 shadow-xl backdrop-blur-sm bg-card/95">
-              <CardHeader className="space-y-1">
-                <CardTitle className="text-2xl text-center">Login</CardTitle>
-                <CardDescription className="text-center">
-                  Enter your credentials to access your account
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.5 }}
+              className="relative bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl p-6 sm:p-8"
+            >
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl blur-xl opacity-20"></div>
+              
+              <div className="relative">
+                <form onSubmit={handleSubmit} className="space-y-5">
                   {/* Email Field */}
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="flex items-center gap-2">
-                      <Mail className="w-4 h-4" />
+                    <Label htmlFor="email" className="flex items-center gap-2 text-slate-200 font-semibold">
+                      <Mail className="w-4 h-4 text-blue-400" />
                       Email Address
                     </Label>
                     <Input
@@ -208,17 +218,14 @@ export default function LoginPage() {
                       value={formData.email}
                       onChange={handleChange}
                       required
-                      className="h-11"
+                      className="h-12 bg-slate-900/50 border-slate-600/50 text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-blue-500/20"
                     />
                   </div>
 
                   {/* Password Field */}
                   <div className="space-y-2">
-                    <Label
-                      htmlFor="password"
-                      className="flex items-center gap-2"
-                    >
-                      <Lock className="w-4 h-4" />
+                    <Label htmlFor="password" className="flex items-center gap-2 text-slate-200 font-semibold">
+                      <Lock className="w-4 h-4 text-blue-400" />
                       Password
                     </Label>
                     <div className="relative">
@@ -230,17 +237,17 @@ export default function LoginPage() {
                         value={formData.password}
                         onChange={handleChange}
                         required
-                        className="h-11 pr-10"
+                        className="h-12 bg-slate-900/50 border-slate-600/50 text-white placeholder:text-slate-500 focus:border-blue-500 focus:ring-blue-500/20 pr-12"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-400 transition-colors"
                       >
                         {showPassword ? (
-                          <EyeOff className="w-4 h-4" />
+                          <EyeOff className="w-5 h-5" />
                         ) : (
-                          <Eye className="w-4 h-4" />
+                          <Eye className="w-5 h-5" />
                         )}
                       </button>
                     </div>
@@ -250,7 +257,7 @@ export default function LoginPage() {
                   <div className="flex items-center justify-end">
                     <Link
                       href="/forgot-password"
-                      className="text-sm text-primary hover:underline"
+                      className="text-sm text-blue-400 hover:text-blue-300 hover:underline transition-colors"
                     >
                       Forgot password?
                     </Link>
@@ -259,18 +266,17 @@ export default function LoginPage() {
                   {/* Submit Button */}
                   <Button
                     type="submit"
-                    className="w-full h-11 text-base"
-                    size="lg"
+                    className="group w-full h-12 text-base font-bold rounded-xl bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 hover:from-blue-500 hover:via-blue-400 hover:to-cyan-400 text-white shadow-lg shadow-blue-500/30 transition-all duration-300 hover:scale-105 hover:shadow-blue-500/50"
                     disabled={isLoading}
                   >
                     {isLoading ? (
                       <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                         Signing In...
                       </>
                     ) : (
                       <>
-                        <Sparkles className="w-4 h-4 mr-2" />
+                        <Sparkles className="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform" />
                         Sign In
                       </>
                     )}
@@ -280,10 +286,10 @@ export default function LoginPage() {
                 {/* Divider */}
                 <div className="relative my-6">
                   <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
+                    <span className="w-full border-t border-slate-700" />
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">
+                    <span className="bg-slate-800/50 px-3 text-slate-400 font-semibold">
                       Or
                     </span>
                   </div>
@@ -291,29 +297,29 @@ export default function LoginPage() {
 
                 {/* Sign Up Link */}
                 <div className="text-center text-sm">
-                  <span className="text-muted-foreground">
+                  <span className="text-slate-400">
                     Don't have an account?{" "}
                   </span>
                   <button
                     type="button"
                     onClick={() => setShowRoleDialog(true)}
-                    className="font-medium text-primary hover:underline"
+                    className="font-bold text-blue-400 hover:text-blue-300 hover:underline transition-colors"
                   >
                     Sign up for free
                   </button>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </motion.div>
           </motion.div>
         </div>
       </div>
 
       {/* Role Selection Dialog */}
       <Dialog open={showRoleDialog} onOpenChange={setShowRoleDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-slate-800 border-slate-700 text-white">
           <DialogHeader>
-            <DialogTitle>Choose Your Account Type</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-2xl font-bold">Choose Your Account Type</DialogTitle>
+            <DialogDescription className="text-slate-400">
               Select whether you want to sign up as a student or mentor
             </DialogDescription>
           </DialogHeader>
@@ -323,14 +329,14 @@ export default function LoginPage() {
                 setShowRoleDialog(false);
                 router.push("/signup");
               }}
-              className="flex cursor-pointer items-center gap-4 p-4 rounded-lg border-2 border-border hover:border-primary hover:bg-accent transition-colors text-left"
+              className="group flex items-center gap-4 p-4 rounded-xl border-2 border-slate-700 hover:border-blue-500 bg-slate-900/50 hover:bg-slate-800/50 transition-all text-left"
             >
-              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10">
-                <User className="w-6 h-6 text-primary" />
+              <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500">
+                <User className="w-7 h-7 text-white" />
               </div>
               <div>
-                <h3 className="font-semibold">Student</h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className="font-bold text-lg">Student</h3>
+                <p className="text-sm text-slate-400">
                   Join as a learner and start your journey
                 </p>
               </div>
@@ -340,14 +346,14 @@ export default function LoginPage() {
                 setShowRoleDialog(false);
                 router.push("/signup/mentor");
               }}
-              className="flex items-center cursor-pointer gap-4 p-4 rounded-lg border-2 border-border hover:border-primary hover:bg-accent transition-colors text-left"
+              className="group flex items-center gap-4 p-4 rounded-xl border-2 border-slate-700 hover:border-purple-500 bg-slate-900/50 hover:bg-slate-800/50 transition-all text-left"
             >
-              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10">
-                <GraduationCap className="w-6 h-6 text-primary" />
+              <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500">
+                <GraduationCap className="w-7 h-7 text-white" />
               </div>
               <div>
-                <h3 className="font-semibold">Mentor</h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className="font-bold text-lg">Mentor</h3>
+                <p className="text-sm text-slate-400">
                   Share your knowledge and guide learners
                 </p>
               </div>

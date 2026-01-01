@@ -3,19 +3,11 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   Mail,
   Lock,
@@ -27,6 +19,7 @@ import {
   CheckCircle2,
   Loader2,
   GraduationCap,
+  Sparkles,
 } from "lucide-react";
 import {
   useMentorSignUpMutation,
@@ -134,33 +127,46 @@ export default function MentorSignupPage() {
   ];
 
   return (
-    <div className="min-h-screen flex relative overflow-hidden bg-background">
-      <Link
-        href="/"
-        className="absolute top-6 left-6 z-20 flex items-center gap-2 text-foreground hover:text-primary transition-colors bg-background/80 backdrop-blur-sm px-3 py-2 rounded-lg border border-border shadow-sm"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        <span className="text-sm font-medium">Back to Home</span>
-      </Link>
-
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-muted">
+    <div className="min-h-screen flex relative overflow-hidden bg-gradient-to-br from-slate-950 via-purple-950 to-indigo-950">
+      {/* Animated Background */}
+      <div className="absolute inset-0 overflow-hidden">
         <motion.div
-          initial={{ opacity: 0, scale: 1.1 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8 }}
-          className="absolute inset-0"
-        >
-          <Image
-            src="/images/sign up.png"
-            alt="Mentor Sign Up"
-            fill
-            className="object-cover"
-            priority
-            sizes="50vw"
-          />
-        </motion.div>
+          className="absolute top-0 right-0 w-[600px] h-[600px] bg-purple-500/20 rounded-full blur-[120px]"
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.2, 0.3, 0.2],
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+        <motion.div
+          className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-pink-500/15 rounded-full blur-[100px]"
+          animate={{
+            scale: [1.2, 1, 1.2],
+            opacity: [0.15, 0.25, 0.15],
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:4rem_4rem]" />
       </div>
 
+      {/* Back to Home Link */}
+      <Link
+        href="/"
+        className="absolute top-6 left-6 z-20 flex items-center gap-2 text-white hover:text-purple-400 transition-colors bg-slate-800/50 backdrop-blur-md px-4 py-2 rounded-xl border border-slate-700/50 shadow-lg group"
+      >
+        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+        <span className="text-sm font-semibold">Back to Home</span>
+      </Link>
+
+      {/* Main Content */}
       <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-8 relative z-10 overflow-y-auto">
         <div className="w-full max-w-md py-8">
           <motion.div
@@ -168,15 +174,27 @@ export default function MentorSignupPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
+            {/* Logo and Header */}
             <div className="text-center mb-8">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="flex justify-center mb-4"
+              >
+                <div className="relative p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl">
+                  <div className="absolute -inset-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl blur-lg opacity-50"></div>
+                  <GraduationCap className="w-8 h-8 text-white relative z-10" />
+                </div>
+              </motion.div>
               <motion.h1
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.3 }}
-                className="text-3xl font-bold mb-2"
+                className="text-3xl sm:text-4xl font-black mb-2"
               >
-                Become a{" "}
-                <span className="bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                <span className="text-white">Become a </span>
+                <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 bg-clip-text text-transparent">
                   Mentor
                 </span>
               </motion.h1>
@@ -184,27 +202,27 @@ export default function MentorSignupPage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.6, delay: 0.4 }}
-                className="text-muted-foreground"
+                className="text-slate-300 text-sm"
               >
-                Share your knowledge and guide learners
+                Share your knowledge and guide the next generation
               </motion.p>
             </div>
 
-            <Card className="border-2 shadow-xl backdrop-blur-sm bg-card/95">
-              <CardHeader className="space-y-1">
-                <CardTitle className="text-2xl text-center flex items-center justify-center gap-2">
-                  <GraduationCap className="w-6 h-6 text-primary" />
-                  Mentor Registration
-                </CardTitle>
-                <CardDescription className="text-center">
-                  Create your mentor account
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+            {/* Signup Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.5 }}
+              className="relative bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl p-6 sm:p-8"
+            >
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 rounded-2xl blur-xl opacity-20"></div>
+              
+              <div className="relative">
                 <form onSubmit={handleSubmit} className="space-y-4">
+                  {/* Name Field */}
                   <div className="space-y-2">
-                    <Label htmlFor="name" className="flex items-center gap-2">
-                      <User className="w-4 h-4" />
+                    <Label htmlFor="name" className="flex items-center gap-2 text-slate-200 font-semibold">
+                      <User className="w-4 h-4 text-purple-400" />
                       Full Name
                     </Label>
                     <Input
@@ -215,13 +233,14 @@ export default function MentorSignupPage() {
                       value={formData.name}
                       onChange={handleChange}
                       required
-                      className="h-11"
+                      className="h-11 bg-slate-900/50 border-slate-600/50 text-white placeholder:text-slate-500 focus:border-purple-500 focus:ring-purple-500/20"
                     />
                   </div>
 
+                  {/* Phone Field */}
                   <div className="space-y-2">
-                    <Label htmlFor="phone" className="flex items-center gap-2">
-                      <Phone className="w-4 h-4" />
+                    <Label htmlFor="phone" className="flex items-center gap-2 text-slate-200 font-semibold">
+                      <Phone className="w-4 h-4 text-purple-400" />
                       Phone Number
                     </Label>
                     <Input
@@ -232,14 +251,15 @@ export default function MentorSignupPage() {
                       value={formData.phone}
                       onChange={handleChange}
                       required
-                      className="h-11"
+                      className="h-11 bg-slate-900/50 border-slate-600/50 text-white placeholder:text-slate-500 focus:border-purple-500 focus:ring-purple-500/20"
                       minLength={10}
                     />
                   </div>
 
+                  {/* Email Field */}
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="flex items-center gap-2">
-                      <Mail className="w-4 h-4" />
+                    <Label htmlFor="email" className="flex items-center gap-2 text-slate-200 font-semibold">
+                      <Mail className="w-4 h-4 text-purple-400" />
                       Email Address
                     </Label>
                     <Input
@@ -250,16 +270,14 @@ export default function MentorSignupPage() {
                       value={formData.email}
                       onChange={handleChange}
                       required
-                      className="h-11"
+                      className="h-11 bg-slate-900/50 border-slate-600/50 text-white placeholder:text-slate-500 focus:border-purple-500 focus:ring-purple-500/20"
                     />
                   </div>
 
+                  {/* Password Field */}
                   <div className="space-y-2">
-                    <Label
-                      htmlFor="password"
-                      className="flex items-center gap-2"
-                    >
-                      <Lock className="w-4 h-4" />
+                    <Label htmlFor="password" className="flex items-center gap-2 text-slate-200 font-semibold">
+                      <Lock className="w-4 h-4 text-purple-400" />
                       Password
                     </Label>
                     <div className="relative">
@@ -271,34 +289,35 @@ export default function MentorSignupPage() {
                         value={formData.password}
                         onChange={handleChange}
                         required
-                        className="h-11 pr-10"
+                        className="h-11 bg-slate-900/50 border-slate-600/50 text-white placeholder:text-slate-500 focus:border-purple-500 focus:ring-purple-500/20 pr-12"
                         minLength={6}
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-purple-400 transition-colors"
                       >
                         {showPassword ? (
-                          <EyeOff className="w-4 h-4" />
+                          <EyeOff className="w-5 h-5" />
                         ) : (
-                          <Eye className="w-4 h-4" />
+                          <Eye className="w-5 h-5" />
                         )}
                       </button>
                     </div>
+                    {/* Password Requirements */}
                     {formData.password && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
-                        className="space-y-1 text-xs"
+                        className="space-y-1 text-xs pt-2"
                       >
                         {passwordRequirements.map((req, index) => (
                           <div
                             key={index}
                             className={`flex items-center gap-2 ${
                               req.met
-                                ? "text-green-600"
-                                : "text-muted-foreground"
+                                ? "text-green-400"
+                                : "text-slate-500"
                             }`}
                           >
                             <CheckCircle2
@@ -313,50 +332,52 @@ export default function MentorSignupPage() {
                     )}
                   </div>
 
+                  {/* Submit Button */}
                   <Button
                     type="submit"
-                    className="w-full h-11 text-base mt-6"
-                    size="lg"
+                    className="group w-full h-12 text-base font-bold rounded-xl bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 hover:from-purple-500 hover:via-pink-400 hover:to-purple-500 text-white shadow-lg shadow-purple-500/30 transition-all duration-300 hover:scale-105 hover:shadow-purple-500/50 mt-6"
                     disabled={isLoading}
                   >
                     {isLoading ? (
                       <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                         Creating Account...
                       </>
                     ) : (
                       <>
-                        <GraduationCap className="w-4 h-4 mr-2" />
+                        <GraduationCap className="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform" />
                         Register as Mentor
                       </>
                     )}
                   </Button>
                 </form>
 
+                {/* Divider */}
                 <div className="relative my-6">
                   <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
+                    <span className="w-full border-t border-slate-700" />
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">
+                    <span className="bg-slate-800/50 px-3 text-slate-400 font-semibold">
                       Or
                     </span>
                   </div>
                 </div>
 
+                {/* Login Link */}
                 <div className="text-center text-sm">
-                  <span className="text-muted-foreground">
+                  <span className="text-slate-400">
                     Already have an account?{" "}
                   </span>
                   <Link
                     href="/login"
-                    className="font-medium text-primary hover:underline"
+                    className="font-bold text-purple-400 hover:text-purple-300 hover:underline transition-colors"
                   >
                     Sign in
                   </Link>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </motion.div>
           </motion.div>
         </div>
       </div>

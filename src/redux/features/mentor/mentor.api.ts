@@ -12,6 +12,12 @@ export interface MentorProfile {
   updatedAt: string;
 }
 
+export interface MentorStatistics {
+  assignedCoursesCount: number;
+  totalEnrollments: number;
+  activeStudents: number;
+}
+
 export interface UpdateMentorProfilePayload {
   name?: string;
   phone?: string;
@@ -26,6 +32,16 @@ const mentorApi = api.injectEndpoints({
       }),
       transformResponse: (response: { data: MentorProfile }) => response.data,
       providesTags: [{ type: "mentor", id: "PROFILE" }, "mentor"],
+    }),
+
+    getMentorStatistics: builder.query<MentorStatistics, void>({
+      query: () => ({
+        url: "/mentor/statistics",
+        method: "GET",
+      }),
+      transformResponse: (response: { data: MentorStatistics }) =>
+        response.data,
+      providesTags: ["mentor"],
     }),
 
     getAllMentors: builder.query<MentorProfile[], void>({
@@ -81,6 +97,7 @@ const mentorApi = api.injectEndpoints({
 
 export const {
   useGetMentorProfileQuery,
+  useGetMentorStatisticsQuery,
   useGetAllMentorsQuery,
   useUpdateMentorProfileMutation,
   useUpdateMentorProfilePhotoMutation,
