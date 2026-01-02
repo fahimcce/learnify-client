@@ -56,11 +56,7 @@ const adminMenuItems = [
     href: "/admin/resources",
     icon: FileText,
   },
-  {
-    title: "Quizzes",
-    href: "/admin/quizzes",
-    icon: ClipboardList,
-  },
+  
   {
     title: "AI Chatbot Data",
     href: "/admin/chatbot-data",

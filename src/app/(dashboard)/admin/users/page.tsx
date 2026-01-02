@@ -63,6 +63,7 @@ export default function AdminUsersPage() {
   const activeUsers = usersArray.filter((u) => !u.isDeleted).length;
   const deletedUsers = usersArray.filter((u) => u.isDeleted).length;
   const blockedUsers = usersArray.filter((u) => u.isBlocked).length;
+  const mentorUsers = usersArray.filter((u) => u.role === "mentor").length;
 
   const handleBlockUser = async () => {
     if (!blockUserId) return;
@@ -107,8 +108,8 @@ export default function AdminUsersPage() {
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
-      case "admin":
-        return "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400";
+      case "mentor":
+        return "bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400";
       case "user":
         return "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400";
       default:
@@ -133,6 +134,7 @@ export default function AdminUsersPage() {
         activeUsers={activeUsers}
         blockedUsers={blockedUsers}
         deletedUsers={deletedUsers}
+        mentorUsers={mentorUsers}
       />
 
       {/* Filters */}

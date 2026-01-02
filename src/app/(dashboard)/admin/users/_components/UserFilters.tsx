@@ -35,8 +35,8 @@ export default function UserFilters({
         <CardTitle>Filters</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="space-y-2">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="space-y-2 md:col-span-2">
             <Label>Search</Label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -51,7 +51,7 @@ export default function UserFilters({
           <div className="space-y-2">
             <Label>Status</Label>
             <Select value={statusFilter} onValueChange={onStatusFilterChange}>
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent>
@@ -66,12 +66,12 @@ export default function UserFilters({
           <div className="space-y-2">
             <Label>Role</Label>
             <Select value={roleFilter} onValueChange={onRoleFilterChange}>
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
+                <SelectItem value="mentor">Mentor</SelectItem>
                 <SelectItem value="user">User</SelectItem>
               </SelectContent>
             </Select>
