@@ -224,6 +224,16 @@ const enrollmentApi = api.injectEndpoints({
       providesTags: ["enrollment"],
     }),
 
+    // Admin: Get mentor enrollments (Admins see which mentors are assigned to which courses)
+    getAdminMentorEnrollments: builder.query<any[], void>({
+      query: () => ({
+        url: "/enrollment/mentor-enrollments",
+        method: "GET",
+      }),
+      transformResponse: (response: { data: any[] }) => response.data,
+      providesTags: ["enrollment", "course"],
+    }),
+
     // Mentor: Get enrollments for my courses
     getMentorEnrollments: builder.query<Enrollment[], void>({
       query: () => ({
@@ -252,4 +262,5 @@ export const {
   useHardDeleteEnrollmentMutation,
   useGetEnrollmentStatisticsQuery,
   useGetMentorEnrollmentsQuery,
+  useGetAdminMentorEnrollmentsQuery,
 } = enrollmentApi;

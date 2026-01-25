@@ -31,8 +31,8 @@ export default function DeleteUserDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Delete User?</AlertDialogTitle>
           <AlertDialogDescription>
-            This will soft delete the user. The user will be marked as deleted
-            but their data will be retained. This action can be reversed.
+            This will permanently delete the user from the system. This action
+            cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

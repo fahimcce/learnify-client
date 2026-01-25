@@ -16,6 +16,19 @@ export interface UpdateAdminProfilePayload {
   phone?: string;
 }
 
+export interface PendingMentor {
+  _id: string;
+  name: string;
+  phone: string;
+  email: string;
+  profilePhoto?: string;
+  isVerified: boolean;
+  isBlocked: boolean;
+  isDeleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 const adminApi = api.injectEndpoints({
   endpoints: (builder) => ({
     // Get admin profile
@@ -70,6 +83,56 @@ const adminApi = api.injectEndpoints({
         "user",
       ],
     }),
+
+    // Get pending mentor verification requests
+    getPendingMentors: builder.query<PendingMentor[], void>({
+      query: () => ({
+        url: "/admin/mentor-verification/pending",
+        method: "GET",
+      }),
+      transformResponse: (response: { data: PendingMentor[] }) => response.data,
+      providesTags: ["mentor-verification"],
+    }),
+
+    // Get all mentors (verified and unverified) for admin verification
+    getAllMentorsForVerification: builder.query<PendingMentor[], void>({
+      query: () => ({
+        url: "/admin/mentor-verification/all",
+        method: "GET",
+      }),
+      transformResponse: (response: { data: PendingMentor[] }) => response.data,
+      providesTags: ["mentor-verification"],
+    }),
+
+    // Approve mentor verification
+    approveMentor: builder.mutation<PendingMentor, string>({
+      query: (mentorId) => ({
+        url: `/admin/mentor-verification/approve/${mentorId}`,
+        method: "PATCH",
+      }),
+      transformResponse: (response: { data: PendingMentor }) => response.data,
+      invalidatesTags: ["mentor-verification", "user"],
+    }),
+
+    // Unverify (revoke) mentor access
+    unverifyMentor: builder.mutation<PendingMentor, string>({
+      query: (mentorId) => ({
+        url: `/admin/mentor-verification/unverify/${mentorId}`,
+        method: "PATCH",
+      }),
+      transformResponse: (response: { data: PendingMentor }) => response.data,
+      invalidatesTags: ["mentor-verification", "user"],
+    }),
+
+    // Reject mentor verification
+    rejectMentor: builder.mutation<PendingMentor, string>({
+      query: (mentorId) => ({
+        url: `/admin/mentor-verification/reject/${mentorId}`,
+        method: "PATCH",
+      }),
+      transformResponse: (response: { data: PendingMentor }) => response.data,
+      invalidatesTags: ["mentor-verification", "user"],
+    }),
   }),
 });
 
@@ -77,4 +140,9 @@ export const {
   useGetAdminProfileQuery,
   useUpdateAdminProfileMutation,
   useUpdateAdminProfilePhotoMutation,
+  useGetPendingMentorsQuery,
+  useGetAllMentorsForVerificationQuery,
+  useApproveMentorMutation,
+  useUnverifyMentorMutation,
+  useRejectMentorMutation,
 } = adminApi;

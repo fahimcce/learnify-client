@@ -4,13 +4,17 @@ import { api } from "@/redux/api/api";
 
 export interface ExtractedQuestion {
   question: string;
-  options: {
+  type: "mcq" | "boolean" | "short_answer";
+  options?: {
     A: string;
     B: string;
     C: string;
     D: string;
   };
-  rightAnswer: "A" | "B" | "C" | "D";
+  rightAnswer?: "A" | "B" | "C" | "D";
+  booleanAnswer?: boolean;
+  expectedAnswer?: string;
+  shortAnswerKeywords?: string[];
   mark: number;
 }
 
@@ -25,12 +29,16 @@ export interface OCRResponse {
 export const ocrApi = api.injectEndpoints({
   endpoints: (builder) => ({
     // Extract questions from images
-    extractQuestions: builder.mutation<ExtractedQuestion[], File[]>({
-      query: (files) => {
+    extractQuestions: builder.mutation<
+      ExtractedQuestion[],
+      { files: File[]; type: string }
+    >({
+      query: ({ files, type }) => {
         const formData = new FormData();
         files.forEach((file) => {
           formData.append("images", file);
         });
+        formData.append("type", type);
 
         return {
           url: "/ocr/extract-questions",

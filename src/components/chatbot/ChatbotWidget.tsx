@@ -97,14 +97,14 @@ const ChatbotWidget = () => {
     <>
       {/* Chatbot Toggle Button - Bigger & Colorful */}
       <motion.div
-        className="fixed bottom-6 right-6 z-50"
+        className="fixed bottom-6 left-6 z-50"
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
       >
         <div className="relative">
           {/* Glow Effect */}
           <div className="absolute -inset-1 bg-gradient-to-r from-red-600 via-orange-600 to-amber-600 rounded-full blur-lg opacity-75 group-hover:opacity-100 transition duration-300 animate-pulse"></div>
-          
+
           {/* Button */}
           <Button
             className="relative h-16 w-16 rounded-full shadow-2xl bg-gradient-to-br from-red-700 via-red-600 to-orange-600 hover:from-red-600 hover:via-red-500 hover:to-orange-500 border-2 border-white/20"
@@ -117,7 +117,7 @@ const ChatbotWidget = () => {
               <MessageCircle className="h-8 w-8 text-white" />
             )}
           </Button>
-          
+
           {/* Notification Badge */}
           {!isOpen && (
             <motion.div
@@ -139,7 +139,7 @@ const ChatbotWidget = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-28 right-6 z-50 w-80 sm:w-96"
+            className="fixed bottom-28 left-6 z-50 w-80 sm:w-96"
           >
             <Card className="shadow-2xl border-2 border-red-500/20 overflow-hidden">
               {/* Colorful Header - UTM Themed (Maroon/Red) */}
@@ -150,8 +150,12 @@ const ChatbotWidget = () => {
                       <Sparkles className="h-5 w-5" />
                     </div>
                     <div>
-                      <CardTitle className="text-lg font-black tracking-tight">UTM AI Assistant</CardTitle>
-                      <p className="text-[10px] text-white/80 font-medium uppercase tracking-wider">Expert in UTM Malaysia</p>
+                      <CardTitle className="text-lg font-black tracking-tight">
+                        UTM AI Assistant
+                      </CardTitle>
+                      <p className="text-[10px] text-white/80 font-medium uppercase tracking-wider">
+                        Expert in UTM Malaysia
+                      </p>
                     </div>
                   </div>
                   <Button

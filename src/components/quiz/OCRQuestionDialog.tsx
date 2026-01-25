@@ -42,12 +42,15 @@ export function OCRQuestionDialog({
     ExtractedQuestion[]
   >([]);
   const [selectedIndices, setSelectedIndices] = useState<Set<number>>(
-    new Set()
+    new Set(),
   );
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editFormData, setEditFormData] = useState<ExtractedQuestion | null>(
-    null
+    null,
   );
+  const [selectedType, setSelectedType] = useState<
+    "mcq" | "boolean" | "short_answer"
+  >("mcq");
 
   const handleQuestionsExtracted = (questions: ExtractedQuestion[]) => {
     setExtractedQuestions(questions);
@@ -67,7 +70,7 @@ export function OCRQuestionDialog({
 
   const handleAddSelected = () => {
     const selectedQuestions = extractedQuestions.filter((_, index) =>
-      selectedIndices.has(index)
+      selectedIndices.has(index),
     );
     onQuestionsSelected(selectedQuestions);
     // Reset
@@ -116,7 +119,7 @@ export function OCRQuestionDialog({
       setEditFormData({
         ...editFormData,
         options: {
-          ...editFormData.options,
+          ...(editFormData.options || { A: "", B: "", C: "", D: "" }),
           [optionKey]: value,
         },
       });
@@ -134,17 +137,37 @@ export function OCRQuestionDialog({
         <DialogHeader>
           <DialogTitle>Extract Questions from Images (AI-Powered)</DialogTitle>
           <DialogDescription>
-            Upload images containing questions. AI will extract them
+            Select the question type and upload images. AI will extract them
             automatically. Review and select which questions to add.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* OCR Extractor */}
+          {/* Type Selection and OCR Extractor */}
           {extractedQuestions.length === 0 && (
-            <OCRQuestionExtractor
-              onQuestionsExtracted={handleQuestionsExtracted}
-            />
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Question Type</Label>
+                <Select
+                  value={selectedType}
+                  onValueChange={(value: any) => setSelectedType(value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select question type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="mcq">Multiple Choice (MCQ)</SelectItem>
+                    <SelectItem value="boolean">True / False</SelectItem>
+                    <SelectItem value="short_answer">Short Answer</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <OCRQuestionExtractor
+                onQuestionsExtracted={handleQuestionsExtracted}
+                type={selectedType}
+              />
+            </div>
           )}
 
           {/* Extracted Questions Preview */}
@@ -181,68 +204,113 @@ export function OCRQuestionDialog({
                           />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label>Option A</Label>
-                            <Input
-                              value={editFormData?.options.A || ""}
-                              onChange={(e) =>
-                                updateEditForm("optionA", e.target.value)
-                              }
-                            />
+                        {editFormData?.type === "mcq" && (
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label>Option A</Label>
+                              <Input
+                                value={editFormData?.options?.A || ""}
+                                onChange={(e) =>
+                                  updateEditForm("optionA", e.target.value)
+                                }
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Option B</Label>
+                              <Input
+                                value={editFormData?.options?.B || ""}
+                                onChange={(e) =>
+                                  updateEditForm("optionB", e.target.value)
+                                }
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Option C</Label>
+                              <Input
+                                value={editFormData?.options?.C || ""}
+                                onChange={(e) =>
+                                  updateEditForm("optionC", e.target.value)
+                                }
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Option D</Label>
+                              <Input
+                                value={editFormData?.options?.D || ""}
+                                onChange={(e) =>
+                                  updateEditForm("optionD", e.target.value)
+                                }
+                              />
+                            </div>
                           </div>
-                          <div className="space-y-2">
-                            <Label>Option B</Label>
-                            <Input
-                              value={editFormData?.options.B || ""}
-                              onChange={(e) =>
-                                updateEditForm("optionB", e.target.value)
-                              }
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Option C</Label>
-                            <Input
-                              value={editFormData?.options.C || ""}
-                              onChange={(e) =>
-                                updateEditForm("optionC", e.target.value)
-                              }
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Option D</Label>
-                            <Input
-                              value={editFormData?.options.D || ""}
-                              onChange={(e) =>
-                                updateEditForm("optionD", e.target.value)
-                              }
-                            />
-                          </div>
-                        </div>
+                        )}
 
                         <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label>Right Answer</Label>
-                            <Select
-                              value={editFormData?.rightAnswer || "A"}
-                              onValueChange={(value) =>
-                                updateEditForm(
-                                  "rightAnswer",
-                                  value as "A" | "B" | "C" | "D"
-                                )
-                              }
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="A">Option A</SelectItem>
-                                <SelectItem value="B">Option B</SelectItem>
-                                <SelectItem value="C">Option C</SelectItem>
-                                <SelectItem value="D">Option D</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
+                          {editFormData?.type === "mcq" && (
+                            <div className="space-y-2">
+                              <Label>Right Answer</Label>
+                              <Select
+                                value={editFormData?.rightAnswer || "A"}
+                                onValueChange={(value) =>
+                                  updateEditForm(
+                                    "rightAnswer",
+                                    value as "A" | "B" | "C" | "D",
+                                  )
+                                }
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="A">Option A</SelectItem>
+                                  <SelectItem value="B">Option B</SelectItem>
+                                  <SelectItem value="C">Option C</SelectItem>
+                                  <SelectItem value="D">Option D</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+
+                          {editFormData?.type === "boolean" && (
+                            <div className="space-y-2">
+                              <Label>Correct Answer</Label>
+                              <Select
+                                value={String(editFormData?.booleanAnswer)}
+                                onValueChange={(value) =>
+                                  updateEditForm(
+                                    "booleanAnswer",
+                                    value === "true",
+                                  )
+                                }
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="true">True</SelectItem>
+                                  <SelectItem value="false">False</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+
+                          {editFormData?.type === "short_answer" && (
+                            <div className="space-y-2 col-span-2">
+                              <Label>Expected Answer</Label>
+                              <textarea
+                                value={editFormData?.expectedAnswer || ""}
+                                onChange={(e) =>
+                                  updateEditForm(
+                                    "expectedAnswer",
+                                    e.target.value,
+                                  )
+                                }
+                                className="flex min-h-[60px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                rows={2}
+                              />
+                            </div>
+                          )}
+
                           <div className="space-y-2">
                             <Label>Mark</Label>
                             <Input
@@ -253,7 +321,7 @@ export function OCRQuestionDialog({
                               onChange={(e) =>
                                 updateEditForm(
                                   "mark",
-                                  parseFloat(e.target.value) || 1
+                                  parseFloat(e.target.value) || 1,
                                 )
                               }
                             />
@@ -295,6 +363,9 @@ export function OCRQuestionDialog({
                                 {question.mark} mark
                                 {question.mark !== 1 ? "s" : ""}
                               </Badge>
+                              <Badge variant="outline" className="capitalize">
+                                {question.type.replace("_", " ")}
+                              </Badge>
                             </div>
                             <div className="flex items-center gap-2">
                               {selectedIndices.has(index) && (
@@ -318,48 +389,44 @@ export function OCRQuestionDialog({
                           <p className="text-sm font-medium">
                             {question.question}
                           </p>
-                          <div className="grid grid-cols-2 gap-2 text-sm">
-                            <div
-                              className={`p-2 rounded ${
-                                question.rightAnswer === "A"
-                                  ? "bg-green-100 dark:bg-green-900/20 border border-green-500"
-                                  : "bg-muted"
-                              }`}
-                            >
-                              <span className="font-semibold">A:</span>{" "}
-                              {question.options.A}
+
+                          {question.type === "mcq" && question.options && (
+                            <div className="grid grid-cols-2 gap-2 text-sm">
+                              {(["A", "B", "C", "D"] as const).map((opt) => (
+                                <div
+                                  key={opt}
+                                  className={`p-2 rounded ${
+                                    question.rightAnswer === opt
+                                      ? "bg-green-100 dark:bg-green-900/20 border border-green-500"
+                                      : "bg-muted"
+                                  }`}
+                                >
+                                  <span className="font-semibold">{opt}:</span>{" "}
+                                  {question.options?.[opt]}
+                                </div>
+                              ))}
                             </div>
-                            <div
-                              className={`p-2 rounded ${
-                                question.rightAnswer === "B"
-                                  ? "bg-green-100 dark:bg-green-900/20 border border-green-500"
-                                  : "bg-muted"
-                              }`}
-                            >
-                              <span className="font-semibold">B:</span>{" "}
-                              {question.options.B}
+                          )}
+
+                          {question.type === "boolean" && (
+                            <div className="text-sm">
+                              <Badge
+                                variant={
+                                  question.booleanAnswer ? "default" : "outline"
+                                }
+                              >
+                                Correct Answer:{" "}
+                                {question.booleanAnswer ? "True" : "False"}
+                              </Badge>
                             </div>
-                            <div
-                              className={`p-2 rounded ${
-                                question.rightAnswer === "C"
-                                  ? "bg-green-100 dark:bg-green-900/20 border border-green-500"
-                                  : "bg-muted"
-                              }`}
-                            >
-                              <span className="font-semibold">C:</span>{" "}
-                              {question.options.C}
+                          )}
+
+                          {question.type === "short_answer" && (
+                            <div className="text-sm p-2 bg-muted rounded italic">
+                              <strong>Expected:</strong>{" "}
+                              {question.expectedAnswer || "Not provided"}
                             </div>
-                            <div
-                              className={`p-2 rounded ${
-                                question.rightAnswer === "D"
-                                  ? "bg-green-100 dark:bg-green-900/20 border border-green-500"
-                                  : "bg-muted"
-                              }`}
-                            >
-                              <span className="font-semibold">D:</span>{" "}
-                              {question.options.D}
-                            </div>
-                          </div>
+                          )}
                         </CardContent>
                       </>
                     )}

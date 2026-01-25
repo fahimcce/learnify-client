@@ -78,11 +78,11 @@ export default function Navbar() {
                 onClick={toggleTheme}
                 className="relative p-2.5 rounded-xl bg-slate-800/50 border border-slate-700/50 hover:border-blue-500/50 transition-all duration-300 group"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="absolute cursor-pointer inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 {isDark ? (
-                  <Moon className="h-4 w-4 text-slate-300 group-hover:text-blue-400 transition-colors relative z-10" />
+                  <Moon className="h-4 w-4 cursor-pointer text-slate-300 group-hover:text-blue-400 transition-colors relative z-10" />
                 ) : (
-                  <Sun className="h-4 w-4 text-slate-300 group-hover:text-yellow-400 transition-colors relative z-10" />
+                  <Sun className="h-4 w-4 cursor-pointer text-slate-300 group-hover:text-yellow-400 transition-colors relative z-10" />
                 )}
                 <span className="sr-only">Toggle theme</span>
               </motion.button>

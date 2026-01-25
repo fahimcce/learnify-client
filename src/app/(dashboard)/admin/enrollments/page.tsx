@@ -5,8 +5,8 @@ import { motion } from "framer-motion";
 import {
   useGetAllEnrollmentsQuery,
   useDeleteEnrollmentMutation,
-  useHardDeleteEnrollmentMutation,
   useGetEnrollmentStatisticsQuery,
+  useGetAdminMentorEnrollmentsQuery,
   Enrollment,
 } from "@/redux/features/enrollment/enrollment.api";
 import {
@@ -45,22 +45,24 @@ import { toast } from "sonner";
 export default function AdminEnrollmentsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [deleteEnrollmentId, setDeleteEnrollmentId] = useState<string | null>(
-    null
+    null,
   );
-  const [hardDeleteEnrollmentId, setHardDeleteEnrollmentId] = useState<
-    string | null
-  >(null);
 
-  const { data: enrollments, isLoading } = useGetAllEnrollmentsQuery({
-    status: statusFilter !== "all" ? statusFilter : undefined,
-  });
+  const { data: enrollments, isLoading: isUserEnrollmentsLoading } =
+    useGetAllEnrollmentsQuery({
+      status: statusFilter !== "all" ? statusFilter : undefined,
+    });
+  const { data: mentorEnrollments, isLoading: isMentorEnrollmentsLoading } =
+    useGetAdminMentorEnrollmentsQuery();
+
   const { data: statistics } = useGetEnrollmentStatisticsQuery();
   const [deleteEnrollment, { isLoading: isDeleting }] =
     useDeleteEnrollmentMutation();
-  const [hardDeleteEnrollment, { isLoading: isHardDeleting }] =
-    useHardDeleteEnrollmentMutation();
 
   const enrollmentsArray = Array.isArray(enrollments) ? enrollments : [];
+  const mentorEnrollmentsArray = Array.isArray(mentorEnrollments)
+    ? mentorEnrollments
+    : [];
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -92,22 +94,7 @@ export default function AdminEnrollmentsPage() {
     }
   };
 
-  const handleHardDelete = async () => {
-    if (!hardDeleteEnrollmentId) return;
-    try {
-      await hardDeleteEnrollment(hardDeleteEnrollmentId).unwrap();
-      toast.success("Enrollment permanently deleted!");
-      setHardDeleteEnrollmentId(null);
-    } catch (error: any) {
-      const errorMessage =
-        error?.data?.message ||
-        error?.message ||
-        "Failed to delete enrollment. Please try again.";
-      toast.error(errorMessage);
-    }
-  };
-
-  if (isLoading) {
+  if (isUserEnrollmentsLoading || isMentorEnrollmentsLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -121,7 +108,7 @@ export default function AdminEnrollmentsPage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Enrollments</h1>
         <p className="text-muted-foreground mt-2">
-          Manage all course enrollments in the system
+          Manage learner and mentor course assignments
         </p>
       </div>
 
@@ -169,138 +156,198 @@ export default function AdminEnrollmentsPage() {
         </div>
       )}
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-          >
-            <option value="all">All Status</option>
-            <option value="enrolled">Enrolled</option>
-            <option value="in-progress">In Progress</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
-        </CardContent>
-      </Card>
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Learner Enrollments Column */}
+        <div className="space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <h2 className="text-xl font-semibold flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              Learner Enrollments
+            </h2>
+            <div className="w-full md:w-48">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              >
+                <option value="all">All Status</option>
+                <option value="enrolled">Enrolled</option>
+                <option value="in-progress">In Progress</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+          </div>
 
-      {/* Enrollments Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>All Enrollments</CardTitle>
-          <CardDescription>
-            {enrollmentsArray.length} enrollment
-            {enrollmentsArray.length !== 1 ? "s" : ""} found
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {enrollmentsArray.length > 0 ? (
-            <div className="space-y-4">
-              {enrollmentsArray.map((enrollment: Enrollment) => (
-                <motion.div
-                  key={enrollment._id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="border rounded-lg p-4 space-y-3"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3">
-                        <h3 className="font-semibold text-lg">
-                          {enrollment.courseId?.courseName || "Unknown Course"}
-                        </h3>
-                        <Badge className={getStatusColor(enrollment.status)}>
-                          {enrollment.status.charAt(0).toUpperCase() +
-                            enrollment.status.slice(1).replace("-", " ")}
+          <Card>
+            <CardContent className="p-4">
+              {enrollmentsArray.length > 0 ? (
+                <div className="space-y-4">
+                  {enrollmentsArray.map((enrollment: Enrollment) => (
+                    <motion.div
+                      key={enrollment._id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="border rounded-lg p-3 space-y-2 bg-muted/30"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="font-semibold">
+                              {enrollment.courseId?.courseName ||
+                                "Unknown Course"}
+                            </h3>
+                            <Badge
+                              className={`text-[10px] h-4 px-1 ${getStatusColor(
+                                enrollment.status,
+                              )}`}
+                            >
+                              {enrollment.status.charAt(0).toUpperCase() +
+                                enrollment.status.slice(1).replace("-", " ")}
+                            </Badge>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground font-mono">
+                            {enrollment.courseId?.courseCode || "N/A"}
+                          </p>
+                          <p className="text-xs mt-1">
+                            <span className="text-muted-foreground">
+                              Learner:
+                            </span>{" "}
+                            {enrollment.userId?.name || "Unknown"}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {enrollment.userId?.email || "N/A"}
+                          </p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setDeleteEnrollmentId(enrollment._id)}
+                          className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+
+                      <div className="flex items-center justify-between text-[10px] pt-1 border-t">
+                        <div>
+                          <p className="text-muted-foreground">Date</p>
+                          <p className="font-medium">
+                            {new Date(
+                              enrollment.enrollmentDate,
+                            ).toLocaleDateString()}
+                          </p>
+                        </div>
+                        {enrollment.userLevel && (
+                          <div className="text-right">
+                            <p className="text-muted-foreground">Level</p>
+                            <p className="font-medium">
+                              {enrollment.userLevel}/10
+                            </p>
+                          </div>
+                        )}
+                        <div className="text-right">
+                          <p className="text-muted-foreground">Progress</p>
+                          <p className="font-medium">{enrollment.progress}%</p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Users className="mx-auto h-10 w-10 text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground">
+                    No learner enrollments found
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Mentor Enrollments Column */}
+        <div className="space-y-6">
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <Users className="h-5 w-5 text-orange-500" />
+            Mentor Enrollments
+          </h2>
+
+          <Card>
+            <CardContent className="p-4">
+              {mentorEnrollmentsArray.length > 0 ? (
+                <div className="space-y-4">
+                  {mentorEnrollmentsArray.map((course: any) => (
+                    <motion.div
+                      key={course._id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="border rounded-lg p-3 space-y-2 bg-orange-50/10 dark:bg-orange-950/5 border-orange-200/50 dark:border-orange-800/30"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="font-semibold">{course.courseName}</h3>
+                          <p className="text-[10px] text-muted-foreground font-mono">
+                            {course.courseCode}
+                          </p>
+                          <div className="flex items-center gap-2 mt-2">
+                            <div className="h-8 w-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 font-bold text-xs overflow-hidden">
+                              {course.mentorId?.image ? (
+                                <img
+                                  src={course.mentorId.image}
+                                  alt={course.mentorId.name}
+                                />
+                              ) : (
+                                course.mentorId?.name?.charAt(0)
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-xs font-medium">
+                                {course.mentorId?.name || "No Mentor"}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground">
+                                {course.mentorId?.email}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="text-orange-500">
+                          Mentor Assigned
                         </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground font-mono mt-1">
-                        {enrollment.courseId?.courseCode || "N/A"}
-                      </p>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Student: {enrollment.userId?.name || "Unknown"} (
-                        {enrollment.userId?.email || "N/A"})
-                      </p>
-                    </div>
-                  </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {enrollment.userLevel && (
-                      <div>
-                        <p className="text-xs text-muted-foreground">
-                          User Level
-                        </p>
-                        <p className="font-semibold">
-                          {enrollment.userLevel}/10
-                        </p>
+                      <div className="flex items-center justify-between text-[10px] pt-1 border-t border-orange-200/50 dark:border-orange-800/30">
+                        <div>
+                          <p className="text-muted-foreground">
+                            Assigned Since
+                          </p>
+                          <p className="font-medium">
+                            {new Date(course.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-muted-foreground">Contact</p>
+                          <p className="font-medium">
+                            {course.mentorId?.phone || "N/A"}
+                          </p>
+                        </div>
                       </div>
-                    )}
-                    <div>
-                      <p className="text-xs text-muted-foreground">
-                        Enrollment Date
-                      </p>
-                      <p className="font-semibold text-sm">
-                        {new Date(
-                          enrollment.enrollmentDate
-                        ).toLocaleDateString()}
-                      </p>
-                    </div>
-                    {enrollment.completionDate && (
-                      <div>
-                        <p className="text-xs text-muted-foreground">
-                          Completion Date
-                        </p>
-                        <p className="font-semibold text-sm">
-                          {new Date(
-                            enrollment.completionDate
-                          ).toLocaleDateString()}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex gap-2 pt-2 border-t">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setDeleteEnrollmentId(enrollment._id)}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="mr-2 h-3 w-3" />
-                      Delete
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setHardDeleteEnrollmentId(enrollment._id)}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      Hard Delete
-                    </Button>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <BookOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">
-                No enrollments found
-              </h3>
-              <p className="text-muted-foreground">
-                {statusFilter !== "all"
-                  ? "Try adjusting your filters"
-                  : "No enrollments in the system yet"}
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <BookOpen className="mx-auto h-10 w-10 text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground">
+                    No mentors assigned to courses yet
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog
@@ -311,8 +358,8 @@ export default function AdminEnrollmentsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Enrollment?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will soft delete the enrollment. The enrollment can be
-              restored later.
+              This action cannot be undone. This will permanently delete the
+              enrollment record from the database.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -329,41 +376,6 @@ export default function AdminEnrollmentsPage() {
                 </>
               ) : (
                 "Delete"
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Hard Delete Confirmation Dialog */}
-      <AlertDialog
-        open={!!hardDeleteEnrollmentId}
-        onOpenChange={(open) => !open && setHardDeleteEnrollmentId(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Permanently Delete Enrollment?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the
-              enrollment from the database.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isHardDeleting}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleHardDelete}
-              disabled={isHardDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isHardDeleting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                "Delete Permanently"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

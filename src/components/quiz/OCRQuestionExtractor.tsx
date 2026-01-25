@@ -11,11 +11,13 @@ import { ExtractedQuestion } from "@/redux/features/ocr/ocr.api";
 interface OCRQuestionExtractorProps {
   onQuestionsExtracted: (questions: ExtractedQuestion[]) => void;
   onClose?: () => void;
+  type: string;
 }
 
 export function OCRQuestionExtractor({
   onQuestionsExtracted,
   onClose,
+  type,
 }: OCRQuestionExtractorProps) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
@@ -57,9 +59,12 @@ export function OCRQuestionExtractor({
     }
 
     try {
-      const questions = await extractQuestions(selectedFiles).unwrap();
+      const questions = await extractQuestions({
+        files: selectedFiles,
+        type,
+      }).unwrap();
       toast.success(
-        `Successfully extracted ${questions.length} question(s) from ${selectedFiles.length} image(s)`
+        `Successfully extracted ${questions.length} question(s) from ${selectedFiles.length} image(s)`,
       );
       onQuestionsExtracted(questions);
       // Reset

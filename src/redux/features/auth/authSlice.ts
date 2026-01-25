@@ -7,6 +7,7 @@ interface DecodedToken {
   role: string;
   userId?: string;
   name?: string;
+  isVerified?: boolean;
   exp?: number;
   iat?: number;
 }
@@ -103,6 +104,7 @@ const authSlice = createSlice({
                   email: decodedToken.email,
                   role: decodedToken.role,
                   name: decodedToken.name,
+                  isVerified: decodedToken.isVerified,
                 };
                 Cookies.set("user", JSON.stringify(state.user), { expires: 7 });
               }
@@ -113,6 +115,7 @@ const authSlice = createSlice({
                 email: decodedToken.email,
                 role: decodedToken.role,
                 name: decodedToken.name,
+                isVerified: decodedToken.isVerified,
               };
               Cookies.set("user", JSON.stringify(state.user), { expires: 7 });
             }

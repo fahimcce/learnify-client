@@ -41,6 +41,7 @@ interface DecodedToken {
   exp: number;
   iat: number;
   name?: string;
+  isVerified?: boolean;
 }
 
 export default function LoginPage() {
@@ -74,6 +75,7 @@ export default function LoginPage() {
             email: decodedToken.email,
             role: decodedToken.role,
             name: decodedToken.name,
+            isVerified: decodedToken.isVerified,
           })
         );
 
@@ -201,12 +203,15 @@ export default function LoginPage() {
               className="relative bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl p-6 sm:p-8"
             >
               <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl blur-xl opacity-20"></div>
-              
+
               <div className="relative">
                 <form onSubmit={handleSubmit} className="space-y-5">
                   {/* Email Field */}
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="flex items-center gap-2 text-slate-200 font-semibold">
+                    <Label
+                      htmlFor="email"
+                      className="flex items-center gap-2 text-slate-200 font-semibold"
+                    >
                       <Mail className="w-4 h-4 text-blue-400" />
                       Email Address
                     </Label>
@@ -224,7 +229,10 @@ export default function LoginPage() {
 
                   {/* Password Field */}
                   <div className="space-y-2">
-                    <Label htmlFor="password" className="flex items-center gap-2 text-slate-200 font-semibold">
+                    <Label
+                      htmlFor="password"
+                      className="flex items-center gap-2 text-slate-200 font-semibold"
+                    >
                       <Lock className="w-4 h-4 text-blue-400" />
                       Password
                     </Label>
@@ -318,7 +326,9 @@ export default function LoginPage() {
       <Dialog open={showRoleDialog} onOpenChange={setShowRoleDialog}>
         <DialogContent className="sm:max-w-md bg-slate-800 border-slate-700 text-white">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">Choose Your Account Type</DialogTitle>
+            <DialogTitle className="text-2xl font-bold">
+              Choose Your Account Type
+            </DialogTitle>
             <DialogDescription className="text-slate-400">
               Select whether you want to sign up as a student or mentor
             </DialogDescription>

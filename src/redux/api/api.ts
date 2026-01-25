@@ -31,6 +31,9 @@ export const api = createApi({
     "chat",
     "quiz",
     "mentor",
+    "mentor-verification",
+    "grading",
+    "recommendation",
   ],
   endpoints: () => ({}),
 });

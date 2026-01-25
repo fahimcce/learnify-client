@@ -39,8 +39,9 @@ export interface Question {
 
 export interface QuestionWithoutAnswer {
   _id: string;
+  type: "mcq" | "short_answer" | "boolean";
   question: string;
-  options: {
+  options?: {
     A: string;
     B: string;
     C: string;
@@ -60,27 +61,35 @@ export interface ExamAttempt {
   startedAt: string;
   submittedAt?: string;
   duration: number;
-  status: "in-progress" | "completed";
+  status: "in-progress" | "completed" | "grading-pending";
+  needsManualGrading?: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface ExamAnswer {
   questionId: string;
-  selectedAnswer: "A" | "B" | "C" | "D" | null;
+  questionType: "mcq" | "short_answer" | "boolean";
+  selectedAnswer?: "A" | "B" | "C" | "D" | null;
+  booleanAnswer?: boolean | null;
+  shortAnswer?: string;
   isCorrect: boolean;
   markObtained: number;
+  isGraded?: boolean;
 }
 
 export interface DetailedExamAnswer extends ExamAnswer {
   question: string;
-  options: {
+  options?: {
     A: string;
     B: string;
     C: string;
     D: string;
   };
-  rightAnswer: "A" | "B" | "C" | "D";
+  rightAnswer?: "A" | "B" | "C" | "D";
+  booleanAnswerRight?: boolean;
+  expectedAnswer?: string;
+  feedback?: string;
   mark: number;
 }
 
@@ -116,6 +125,60 @@ export interface StartExamResponse {
   status: "in-progress";
 }
 
+// ==================== Manual Grading Types ====================
+
+export interface PendingGradingAttempt {
+  _id: string;
+  user: { _id: string; name: string; email: string };
+  quizSet: QuizSet;
+  score: number;
+  totalMarks: number;
+  ungradedCount: number;
+  submittedAt: string;
+  createdAt: string;
+}
+
+export interface GradingAnswer {
+  questionId: string;
+  questionType: "mcq" | "short_answer" | "boolean";
+  selectedAnswer?: "A" | "B" | "C" | "D" | null;
+  booleanAnswer?: boolean | null;
+  shortAnswer?: string;
+  isCorrect: boolean;
+  markObtained: number;
+  isGraded: boolean;
+  feedback?: string;
+  question: string;
+  expectedAnswer?: string;
+  shortAnswerKeywords?: string[];
+  mark: number;
+  type: "mcq" | "short_answer" | "boolean";
+}
+
+export interface GradingAttemptDetails {
+  _id: string;
+  user: { _id: string; name: string; email: string };
+  quizSet: QuizSet;
+  answers: GradingAnswer[];
+  score: number;
+  totalMarks: number;
+  status: "in-progress" | "completed" | "grading-pending";
+  submittedAt: string;
+}
+
+export interface GradeShortAnswerPayload {
+  markObtained: number;
+  isCorrect: boolean;
+  feedback?: string;
+}
+
+export interface GradeResult {
+  message: string;
+  score: number;
+  percentage: number;
+  status: string;
+}
+
 // ==================== Payload Types ====================
 
 export interface CreateQuizSetPayload {
@@ -147,13 +210,17 @@ export interface CreateQuestionPayload {
 
 export interface BulkQuestionItem {
   question: string;
-  options: {
+  type?: "mcq" | "short_answer" | "boolean";
+  options?: {
     A: string;
     B: string;
     C: string;
     D: string;
   };
-  rightAnswer: "A" | "B" | "C" | "D";
+  rightAnswer?: "A" | "B" | "C" | "D";
+  booleanAnswer?: boolean;
+  expectedAnswer?: string;
+  shortAnswerKeywords?: string[];
   mark: number;
 }
 
@@ -165,6 +232,7 @@ export interface CreateBulkQuestionsPayload {
 export interface UpdateQuestionPayload {
   quizSet?: string;
   question?: string;
+  type?: "mcq" | "short_answer" | "boolean";
   options?: {
     A: string;
     B: string;
@@ -172,6 +240,9 @@ export interface UpdateQuestionPayload {
     D: string;
   };
   rightAnswer?: "A" | "B" | "C" | "D";
+  booleanAnswer?: boolean;
+  expectedAnswer?: string;
+  shortAnswerKeywords?: string[];
   mark?: number;
 }
 
@@ -179,7 +250,9 @@ export interface SubmitExamPayload {
   quizSetId: string;
   answers: Array<{
     questionId: string;
-    selectedAnswer: "A" | "B" | "C" | "D" | null;
+    selectedAnswer?: "A" | "B" | "C" | "D" | null;
+    booleanAnswer?: boolean | null;
+    shortAnswer?: string;
   }>;
 }
 
@@ -441,6 +514,50 @@ const quizApi = api.injectEndpoints({
         "quiz",
       ],
     }),
+
+    // ==================== Manual Grading Endpoints ====================
+
+    // Get all attempts pending manual grading
+    getPendingGradingAttempts: builder.query<PendingGradingAttempt[], void>({
+      query: () => ({
+        url: "/quiz/grading/pending",
+        method: "GET",
+      }),
+      transformResponse: (response: { data: PendingGradingAttempt[] }) =>
+        response.data,
+      providesTags: ["quiz", "grading"],
+    }),
+
+    // Get attempt details for grading
+    getAttemptForGrading: builder.query<GradingAttemptDetails, string>({
+      query: (attemptId) => ({
+        url: `/quiz/grading/attempt/${attemptId}`,
+        method: "GET",
+      }),
+      transformResponse: (response: { data: GradingAttemptDetails }) =>
+        response.data,
+      providesTags: (_result, _error, attemptId) => [
+        { type: "quiz", id: `grading-${attemptId}` },
+      ],
+    }),
+
+    // Grade a short answer question
+    gradeShortAnswer: builder.mutation<
+      GradeResult,
+      { attemptId: string; questionId: string; data: GradeShortAnswerPayload }
+    >({
+      query: ({ attemptId, questionId, data }) => ({
+        url: `/quiz/grading/attempt/${attemptId}/question/${questionId}`,
+        method: "PATCH",
+        body: data,
+      }),
+      transformResponse: (response: { data: GradeResult }) => response.data,
+      invalidatesTags: (_result, _error, { attemptId }) => [
+        { type: "quiz", id: `grading-${attemptId}` },
+        "quiz",
+        "grading",
+      ],
+    }),
   }),
 });
 
@@ -479,3 +596,10 @@ export const {
 
 // Admin: Exam Attempts Hooks
 export const { useGetAllExamAttemptsByQuizSetQuery } = quizApi;
+
+// Manual Grading Hooks
+export const {
+  useGetPendingGradingAttemptsQuery,
+  useGetAttemptForGradingQuery,
+  useGradeShortAnswerMutation,
+} = quizApi;

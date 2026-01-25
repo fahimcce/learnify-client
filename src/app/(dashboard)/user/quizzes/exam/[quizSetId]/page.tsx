@@ -10,6 +10,9 @@ import {
 } from "@/redux/features/quiz/quiz.api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,7 +23,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Clock, CheckCircle2, AlertCircle, Send } from "lucide-react";
+import {
+  Loader2,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  Send,
+  XCircle,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
@@ -32,9 +42,7 @@ export default function ExamPage() {
   const attemptIdFromUrl = searchParams.get("attemptId");
 
   const [examData, setExamData] = useState<StartExamResponse | null>(null);
-  const [answers, setAnswers] = useState<
-    Record<string, "A" | "B" | "C" | "D" | null>
-  >({});
+  const [answers, setAnswers] = useState<Record<string, any>>({});
   const [timeRemaining, setTimeRemaining] = useState<number>(0); // in seconds
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
@@ -55,9 +63,11 @@ export default function ExamPage() {
         startTimeRef.current = new Date(result.startedAt);
 
         // Initialize answers
-        const initialAnswers: Record<string, "A" | "B" | "C" | "D" | null> = {};
+        const initialAnswers: Record<string, any> = {};
         result.questions.forEach((q) => {
-          initialAnswers[q._id] = null;
+          if (q.type === "mcq") initialAnswers[q._id] = null;
+          else if (q.type === "boolean") initialAnswers[q._id] = null;
+          else if (q.type === "short_answer") initialAnswers[q._id] = "";
         });
         setAnswers(initialAnswers);
       } catch (error: any) {
@@ -120,13 +130,10 @@ export default function ExamPage() {
       .padStart(2, "0")}`;
   };
 
-  const handleAnswerChange = (
-    questionId: string,
-    answer: "A" | "B" | "C" | "D"
-  ) => {
+  const handleAnswerChange = (questionId: string, value: any) => {
     setAnswers((prev) => ({
       ...prev,
-      [questionId]: answer,
+      [questionId]: value,
     }));
   };
 
@@ -142,10 +149,16 @@ export default function ExamPage() {
     setIsSubmitting(true);
 
     try {
-      const answersArray = examData.questions.map((q) => ({
-        questionId: q._id,
-        selectedAnswer: answers[q._id] || null,
-      }));
+      const answersArray = examData.questions.map((q) => {
+        const answer: any = { questionId: q._id };
+        const type = q.type || ((q as any).options ? "mcq" : "short_answer");
+
+        if (type === "mcq") answer.selectedAnswer = answers[q._id];
+        else if (type === "boolean") answer.booleanAnswer = answers[q._id];
+        else if (type === "short_answer") answer.shortAnswer = answers[q._id];
+
+        return answer;
+      });
 
       const result = await submitExam({
         quizSetId: quizSetId,
@@ -186,10 +199,22 @@ export default function ExamPage() {
     setShowSubmitDialog(false);
 
     try {
-      const answersArray = examData.questions.map((q) => ({
-        questionId: q._id,
-        selectedAnswer: answers[q._id] || null,
-      }));
+      const answersArray = examData.questions.map((q) => {
+        const answer: any = { questionId: q._id };
+
+        // Use type-aware answer mapping
+        const type = q.type || ((q as any).options ? "mcq" : "short_answer");
+
+        if (type === "mcq") {
+          answer.selectedAnswer = answers[q._id] || null;
+        } else if (type === "boolean") {
+          answer.booleanAnswer = answers[q._id] ?? null;
+        } else if (type === "short_answer") {
+          answer.shortAnswer = answers[q._id] || "";
+        }
+
+        return answer;
+      });
 
       const result = await submitExam({
         quizSetId: quizSetId,
@@ -274,61 +299,170 @@ export default function ExamPage() {
       {/* Questions */}
       <div className="space-y-6">
         {examData.questions.map((question, index) => (
-          <Card key={question._id}>
+          <Card
+            key={question._id}
+            className="transition-all hover:shadow-md animate-in fade-in slide-in-from-bottom-2 duration-300"
+          >
             <CardHeader>
               <div className="flex items-start justify-between">
-                <CardTitle className="text-lg">
-                  Question {index + 1} of {examData.questions.length}
-                </CardTitle>
-                <Badge variant="outline">{question.mark} marks</Badge>
+                <div className="flex items-center gap-3">
+                  <CardTitle className="text-lg">
+                    Question {index + 1}
+                  </CardTitle>
+                  {answers[question._id] !== null &&
+                  answers[question._id] !== "" ? (
+                    <Badge
+                      variant="secondary"
+                      className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-200"
+                    >
+                      <CheckCircle2 className="h-3 w-3 mr-1" />
+                      Answered
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant="outline"
+                      className="text-orange-500 border-orange-200 bg-orange-50 dark:bg-orange-950/20"
+                    >
+                      Not Answered
+                    </Badge>
+                  )}
+                </div>
+                <Badge variant="outline" className="font-bold">
+                  {question.mark} Marks
+                </Badge>
               </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <p className="text-base font-medium">{question.question}</p>
 
-                <div className="space-y-3">
-                  {["A", "B", "C", "D"].map((option) => (
+                {/* MCQ Options */}
+                {(question.type === "mcq" ||
+                  (!question.type && question.options)) &&
+                  question.options && (
+                    <div className="space-y-3">
+                      {["A", "B", "C", "D"].map((option) => (
+                        <button
+                          key={option}
+                          type="button"
+                          onClick={() =>
+                            handleAnswerChange(question._id, option)
+                          }
+                          className={`w-full text-left flex items-center space-x-3 p-4 rounded-md border transition-colors ${
+                            answers[question._id] === option
+                              ? "border-primary bg-primary/10 hover:bg-primary/15"
+                              : "border-border hover:border-primary/50 hover:bg-accent"
+                          }`}
+                        >
+                          <div
+                            className={`shrink-0 h-5 w-5 rounded-full border-2 flex items-center justify-center ${
+                              answers[question._id] === option
+                                ? "border-primary bg-primary"
+                                : "border-muted-foreground"
+                            }`}
+                          >
+                            {answers[question._id] === option && (
+                              <div className="h-2.5 w-2.5 rounded-full bg-primary-foreground" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <span className="font-medium mr-2">
+                              Option {option}:
+                            </span>
+                            <span>
+                              {
+                                question.options![
+                                  option as "A" | "B" | "C" | "D"
+                                ]
+                              }
+                            </span>
+                          </div>
+                          {answers[question._id] === option && (
+                            <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                {/* Boolean Answer */}
+                {question.type === "boolean" && (
+                  <div className="grid grid-cols-2 gap-4">
                     <button
-                      key={option}
                       type="button"
-                      onClick={() =>
-                        handleAnswerChange(
-                          question._id,
-                          option as "A" | "B" | "C" | "D"
-                        )
-                      }
-                      className={`w-full text-left flex items-center space-x-3 p-4 rounded-md border transition-colors ${
-                        answers[question._id] === option
-                          ? "border-primary bg-primary/10 hover:bg-primary/15"
-                          : "border-border hover:border-primary/50 hover:bg-accent"
+                      onClick={() => handleAnswerChange(question._id, true)}
+                      className={`flex flex-col items-center justify-center p-6 rounded-xl border-2 transition-all ${
+                        answers[question._id] === true
+                          ? "border-green-500 bg-green-50 dark:bg-green-950/20"
+                          : "border-border hover:border-green-200"
                       }`}
                     >
-                      <div
-                        className={`shrink-0 h-5 w-5 rounded-full border-2 flex items-center justify-center ${
-                          answers[question._id] === option
-                            ? "border-primary bg-primary"
-                            : "border-muted-foreground"
+                      <CheckCircle2
+                        className={`h-8 w-8 mb-2 ${
+                          answers[question._id] === true
+                            ? "text-green-500"
+                            : "text-muted-foreground"
+                        }`}
+                      />
+                      <span
+                        className={`font-bold text-lg ${
+                          answers[question._id] === true
+                            ? "text-green-700 dark:text-green-400"
+                            : "text-muted-foreground"
                         }`}
                       >
-                        {answers[question._id] === option && (
-                          <div className="h-2.5 w-2.5 rounded-full bg-primary-foreground" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <span className="font-medium mr-2">
-                          Option {option}:
-                        </span>
-                        <span>
-                          {question.options[option as "A" | "B" | "C" | "D"]}
-                        </span>
-                      </div>
-                      {answers[question._id] === option && (
-                        <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
-                      )}
+                        TRUE
+                      </span>
                     </button>
-                  ))}
-                </div>
+                    <button
+                      type="button"
+                      onClick={() => handleAnswerChange(question._id, false)}
+                      className={`flex flex-col items-center justify-center p-6 rounded-xl border-2 transition-all ${
+                        answers[question._id] === false
+                          ? "border-red-500 bg-red-50 dark:bg-red-950/20"
+                          : "border-border hover:border-red-200"
+                      }`}
+                    >
+                      <XCircle
+                        className={`h-8 w-8 mb-2 ${
+                          answers[question._id] === false
+                            ? "text-red-500"
+                            : "text-muted-foreground"
+                        }`}
+                      />
+                      <span
+                        className={`font-bold text-lg ${
+                          answers[question._id] === false
+                            ? "text-red-700 dark:text-red-400"
+                            : "text-muted-foreground"
+                        }`}
+                      >
+                        FALSE
+                      </span>
+                    </button>
+                  </div>
+                )}
+
+                {/* Short Answer (Fallback) */}
+                {(question.type === "short_answer" ||
+                  (!question.type && !question.options)) && (
+                  <div className="space-y-2">
+                    <Label className="text-sm text-muted-foreground">
+                      Your Answer:
+                    </Label>
+                    <Textarea
+                      placeholder="Type your answer here..."
+                      className="min-h-[120px] resize-none focus-visible:ring-primary"
+                      value={answers[question._id] || ""}
+                      onChange={(e) =>
+                        handleAnswerChange(question._id, e.target.value)
+                      }
+                    />
+                    <p className="text-[11px] text-muted-foreground italic">
+                      Tip: Provide a clear and concise answer.
+                    </p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -345,15 +479,15 @@ export default function ExamPage() {
         </CardContent>
       </Card>
 
-      {/* Fixed Timer - Bottom Right - Eye-catching Design (Compact) */}
-      <div className="fixed bottom-4 right-4 z-50">
+      {/* Fixed Timer - Top Center - Eye-catching Design */}
+      <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[100] w-auto">
         <div
-          className={`relative overflow-hidden rounded-xl p-3 shadow-2xl backdrop-blur-sm border-2 transition-all duration-300 ${
+          className={`relative overflow-hidden rounded-2xl px-5 py-2.5 shadow-2xl backdrop-blur-md border-2 transition-all duration-300 ${
             timeRemaining < 300
-              ? "bg-linear-to-br from-red-500 via-red-600 to-red-700 border-red-400 animate-pulse"
+              ? "bg-linear-to-br from-red-500/95 via-red-600/95 to-red-700/95 border-red-400/50 animate-pulse"
               : timeRemaining < 600
-              ? "bg-linear-to-br from-orange-500 via-orange-600 to-orange-700 border-orange-400"
-              : "bg-linear-to-br from-primary via-primary/90 to-primary/80 border-primary/50"
+              ? "bg-linear-to-br from-orange-500/95 via-orange-600/95 to-orange-700/95 border-orange-400/50"
+              : "bg-linear-to-br from-primary/95 via-primary/90 to-primary/85 border-primary/40"
           }`}
         >
           {/* Animated background glow */}
@@ -374,48 +508,47 @@ export default function ExamPage() {
           />
 
           {/* Content */}
-          <div className="relative z-10 text-center">
-            <div className="flex items-center justify-center gap-1.5 mb-1">
-              <Clock
-                className={`h-3.5 w-3.5 ${
-                  timeRemaining < 300
-                    ? "text-white animate-spin"
-                    : timeRemaining < 600
-                    ? "text-white"
-                    : "text-white"
+          <div className="relative z-10 flex flex-col items-center min-w-[120px]">
+            <div className="flex items-center justify-center gap-3 w-full">
+              <div className="flex items-center gap-2">
+                <Clock
+                  className={`h-4 w-4 ${
+                    timeRemaining < 300
+                      ? "text-white animate-spin"
+                      : "text-white"
+                  }`}
+                  style={{
+                    animation:
+                      timeRemaining < 300
+                        ? "spin 1.5s linear infinite"
+                        : "none",
+                  }}
+                />
+                <span className="text-[11px] font-bold text-white/90 uppercase tracking-widest">
+                  {timeRemaining < 300 ? "Time Critical" : "Time Remaining"}
+                </span>
+              </div>
+              <div
+                className={`text-2xl font-black text-white drop-shadow-md ${
+                  timeRemaining < 300 ? "scale-110 transition-transform" : ""
                 }`}
                 style={{
-                  animation:
-                    timeRemaining < 300 ? "spin 1s linear infinite" : "none",
+                  textShadow: "0 2px 8px rgba(0, 0, 0, 0.4)",
+                  fontFamily: "monospace",
                 }}
-              />
-              <span className="text-[10px] font-semibold text-white/90 uppercase tracking-wider">
-                Time
-              </span>
-            </div>
-            <div
-              className={`text-2xl font-black text-white drop-shadow-lg ${
-                timeRemaining < 300 ? "animate-pulse" : ""
-              }`}
-              style={{
-                textShadow: "0 2px 10px rgba(0, 0, 0, 0.3)",
-                fontFamily: "monospace",
-                letterSpacing: "0.05em",
-              }}
-            >
-              {formatTime(timeRemaining)}
+              >
+                {formatTime(timeRemaining)}
+              </div>
             </div>
 
             {/* Progress bar indicator */}
             {examData && (
-              <div className="mt-1.5 w-full bg-white/20 rounded-full h-1 overflow-hidden">
+              <div className="mt-2 w-full bg-white/20 rounded-full h-1.5 overflow-hidden">
                 <div
                   className={`h-full transition-all duration-1000 ${
                     timeRemaining < 300
                       ? "bg-white animate-pulse"
-                      : timeRemaining < 600
-                      ? "bg-white"
-                      : "bg-white/80"
+                      : "bg-white/90"
                   }`}
                   style={{
                     width: `${
@@ -428,8 +561,8 @@ export default function ExamPage() {
           </div>
 
           {/* Corner accent */}
-          <div className="absolute top-0 right-0 w-12 h-12 bg-white/10 rounded-bl-full" />
-          <div className="absolute bottom-0 left-0 w-10 h-10 bg-white/5 rounded-tr-full" />
+          <div className="absolute top-0 right-0 w-8 h-8 bg-white/10 rounded-bl-full" />
+          <div className="absolute bottom-0 left-0 w-6 h-6 bg-white/5 rounded-tr-full" />
         </div>
       </div>
 

@@ -14,11 +14,27 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Loader2, Users } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, Users, MoreHorizontal, Ban, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import UserStatistics from "./_components/UserStatistics";
 import UserFilters from "./_components/UserFilters";
-import UserCard from "./_components/UserCard";
 import BlockUserDialog from "./_components/BlockUserDialog";
 import DeleteUserDialog from "./_components/DeleteUserDialog";
 
@@ -78,7 +94,7 @@ export default function AdminUsersPage() {
       toast.success(
         user.isBlocked
           ? "User unblocked successfully!"
-          : "User blocked successfully!"
+          : "User blocked successfully!",
       );
       setBlockUserId(null);
     } catch (error: any) {
@@ -159,16 +175,92 @@ export default function AdminUsersPage() {
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : filteredUsers.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {filteredUsers.map((user) => (
-                <UserCard
-                  key={user._id}
-                  user={user}
-                  onBlock={setBlockUserId}
-                  onDelete={setDeleteUserId}
-                  getRoleBadgeColor={getRoleBadgeColor}
-                />
-              ))}
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredUsers.map((user) => (
+                    <TableRow key={user._id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                            <Users className="h-5 w-5 text-primary" />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{user.name}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {user.email}
+                            </span>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="secondary"
+                          className={getRoleBadgeColor(user.role)}
+                        >
+                          {user.role}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {user.phone || "N/A"}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {user.isBlocked && (
+                            <Badge variant="destructive">Blocked</Badge>
+                          )}
+                          {!user.isDeleted && !user.isBlocked && (
+                            <Badge
+                              variant="outline"
+                              className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400"
+                            >
+                              Active
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => setBlockUserId(user._id)}
+                            >
+                              <Ban className="mr-2 h-4 w-4" />
+                              {user.isBlocked ? "Unblock" : "Block"}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => setDeleteUserId(user._id)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           ) : (
             <div className="text-center py-12">
