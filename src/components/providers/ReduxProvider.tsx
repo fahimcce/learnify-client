@@ -5,6 +5,7 @@ import { PersistGate } from "redux-persist/integration/react";
 import { useEffect } from "react";
 import { store, persistor } from "@/redux/store";
 import { rehydrateAuth } from "@/redux/features/auth/authSlice";
+import { AuthSync } from "./AuthSync";
 
 export function ReduxProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -21,6 +22,7 @@ export function ReduxProvider({ children }: { children: React.ReactNode }) {
   return (
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
+        <AuthSync />
         {children}
       </PersistGate>
     </Provider>

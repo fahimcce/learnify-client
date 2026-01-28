@@ -8,6 +8,7 @@ import { MentorSidebar } from "@/components/dashboard/MentorSidebar";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { MentorVerificationPending } from "@/components/dashboard/MentorVerificationPending";
 import { Loader2 } from "lucide-react";
+import { useGetMyProfileQuery } from "@/redux/features/user/user.api";
 
 export default function MentorLayout({
   children,
@@ -15,6 +16,7 @@ export default function MentorLayout({
   children: React.ReactNode;
 }) {
   const user = useSelector((state: RootState) => state.auth.user);
+  const { data: profile, isLoading: isProfileLoading } = useGetMyProfileQuery();
   const router = useRouter();
   const [isMounted, setIsMounted] = useState(false);
 
@@ -22,8 +24,8 @@ export default function MentorLayout({
     setIsMounted(true);
   }, []);
 
-  // If not mounted yet, show loading to avoid hydration mismatch
-  if (!isMounted) {
+  // If not mounted yet or profile is loading, show loading to avoid hydration mismatch and stale data
+  if (!isMounted || isProfileLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -41,8 +43,10 @@ export default function MentorLayout({
     );
   }
 
-  // Check if mentor is verified - if isVerified is not explicitly true, show pending
-  if (user.role === "mentor" && user.isVerified !== true) {
+  // Check if mentor is verified - use profile data from server if available, otherwise fallback to Redux state
+  const isVerified = profile ? profile.isVerified : user.isVerified;
+
+  if (user.role === "mentor" && isVerified !== true) {
     return <MentorVerificationPending />;
   }
 

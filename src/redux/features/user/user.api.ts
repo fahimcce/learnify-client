@@ -6,6 +6,7 @@ export interface UserProfile {
   phone: string;
   email: string;
   role: string;
+  isVerified?: boolean;
   profilePhoto?: string;
   isDeleted: boolean;
   isBlocked?: boolean;
